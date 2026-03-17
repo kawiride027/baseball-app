@@ -1,0 +1,59 @@
+:root {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-card: #252525;
+  --bg-field: #1a472a;
+  --bg-dirt: #8B6914;
+  --text-primary: #FFFFFF;
+  --text-secondary: #BBBBBB;
+  --text-accent: #FFD700;
+  --text-position: #00E5FF;
+  --color-playing: #00C853;
+  --color-bench: #666666;
+  --color-danger: #FF1744;
+  --color-button-bg: #2A2A2A;
+  --color-button-border: #FFD700;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 16px;
+  --font-size-md: 20px;
+  --font-size-lg: 28px;
+  --font-size-xl: 42px;
+
+  --touch-min: 48px;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input, select {
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
