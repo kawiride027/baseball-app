@@ -202,6 +202,12 @@ export default function SetupScreen({ data, updateData }) {
 
       {/* Schedule */}
       <div className="section-title">Game Schedule ({data.schedule.length} games)</div>
+      {data.schedule.length === 0 && (
+        <label className="btn btn--accent btn--full" style={{ cursor: 'pointer', textAlign: 'center', marginBottom: 12, fontSize: 16 }}>
+          Import Season Schedule (.json)
+          <input type="file" accept=".json" onChange={importSchedule} style={{ display: 'none' }} />
+        </label>
+      )}
       {data.schedule.map((game) => (
         <div key={game.id} style={rowStyle}>
           <input
