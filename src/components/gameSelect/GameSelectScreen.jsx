@@ -34,6 +34,7 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
           const isActive = game.id === activeGameId
           const gameData = games?.[game.id]
           const isSetUp = gameData?.setupComplete
+          const isCompleted = gameData?.completed
           const homeAway = gameData ? (gameData.isHome ? 'HOME' : 'AWAY') : null
 
           return (
@@ -70,9 +71,22 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                   {isToday && ' — TODAY'}
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#FFF' }}>
-                  vs {game.opponent || 'TBD'}
+                  {game.opponent?.startsWith('@ ')
+                    ? `@ ${game.opponent.slice(2)}`
+                    : `vs ${game.opponent || 'TBD'}`}
                 </div>
-                {homeAway && (
+                {isCompleted && gameData.score && (
+                  <div style={{
+                    fontSize: 14,
+                    fontWeight: 900,
+                    marginTop: 4,
+                    color: gameData.result === 'W' ? '#00C853' : gameData.result === 'L' ? '#FF1744' : '#FF9800',
+                  }}>
+                    {gameData.result === 'W' ? 'W' : gameData.result === 'L' ? 'L' : 'T'}{' '}
+                    {gameData.score.us}–{gameData.score.them}
+                  </div>
+                )}
+                {homeAway && !isCompleted && (
                   <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
                     {homeAway === 'HOME' ? '🏠' : '🚌'} {homeAway}
                     {isSetUp && ' · ✅ Lineup set'}
@@ -81,14 +95,14 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
               </div>
               <div style={{
                 padding: '8px 18px',
-                background: isActive ? '#FFD700' : isSetUp ? '#1a472a' : '#333',
-                color: isActive ? '#000' : isSetUp ? '#00C853' : '#FFD700',
+                background: isCompleted ? '#333' : isActive ? '#FFD700' : isSetUp ? '#1a472a' : '#333',
+                color: isCompleted ? '#888' : isActive ? '#000' : isSetUp ? '#00C853' : '#FFD700',
                 borderRadius: 8,
                 fontSize: 14,
                 fontWeight: 900,
                 flexShrink: 0,
               }}>
-                {isActive ? 'ACTIVE' : isSetUp ? 'RESUME ▶' : 'SET UP ▶'}
+                {isCompleted ? 'DONE' : isActive ? 'ACTIVE' : isSetUp ? 'RESUME ▶' : 'SET UP ▶'}
               </div>
             </button>
           )

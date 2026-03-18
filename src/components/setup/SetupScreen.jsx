@@ -57,6 +57,39 @@ export default function SetupScreen({ data, updateData }) {
     }))
   }
 
+  const importSchedule = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const imported = JSON.parse(ev.target.result)
+        if (!Array.isArray(imported)) {
+          alert('Invalid schedule file: expected an array of games')
+          return
+        }
+        if (data.schedule.length > 0) {
+          if (!confirm(`Replace ${data.schedule.length} existing games with ${imported.length} imported games?`)) {
+            return
+          }
+        }
+        const newGames = imported.map((g, i) => ({
+          id: 'g' + (Date.now() + i) + Math.random().toString(36).slice(2, 6),
+          date: g.date || '',
+          opponent: g.opponent || '',
+        }))
+        updateData((prev) => ({
+          ...prev,
+          schedule: newGames,
+        }))
+      } catch (err) {
+        alert('Invalid schedule file')
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
   const updateGame = (id, field, value) => {
     updateData((prev) => ({
       ...prev,
@@ -187,9 +220,15 @@ export default function SetupScreen({ data, updateData }) {
           <button style={removeBtn} onClick={() => removeGame(game.id)}>✕</button>
         </div>
       ))}
-      <button className="btn btn--accent btn--full" onClick={addGame} style={{ marginTop: 8 }}>
-        + Add Game
-      </button>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button className="btn btn--accent btn--full" onClick={addGame} style={{ flex: 1 }}>
+          + Add Game
+        </button>
+        <label className="btn btn--full" style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}>
+          Import Schedule
+          <input type="file" accept=".json" onChange={importSchedule} style={{ display: 'none' }} />
+        </label>
+      </div>
 
       {/* Data management */}
       <div className="section-title">Data Management</div>

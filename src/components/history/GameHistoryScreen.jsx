@@ -94,11 +94,24 @@ export default function GameHistoryScreen({ schedule, games, roster }) {
             {formatDate(selectedSchedule.date)}
           </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: '#FFD700' }}>
-            vs {selectedSchedule.opponent || 'TBD'}
+            {selectedSchedule.opponent?.startsWith('@ ')
+              ? `@ ${selectedSchedule.opponent.slice(2)}`
+              : `vs ${selectedSchedule.opponent || 'TBD'}`}
           </div>
           <div style={{ fontSize: 13, color: '#888' }}>
             {selectedGame.isHome ? '🏠 HOME' : '🚌 AWAY'}
           </div>
+          {selectedGame.completed && selectedGame.score && (
+            <div style={{
+              fontSize: 20,
+              fontWeight: 900,
+              marginTop: 4,
+              color: selectedGame.result === 'W' ? '#00C853' : selectedGame.result === 'L' ? '#FF1744' : '#FF9800',
+            }}>
+              {selectedGame.result === 'W' ? 'WIN' : selectedGame.result === 'L' ? 'LOSS' : 'TIE'}{' '}
+              {selectedGame.score.us}–{selectedGame.score.them}
+            </div>
+          )}
         </div>
 
         {/* Lineup grid */}
@@ -249,10 +262,22 @@ export default function GameHistoryScreen({ schedule, games, roster }) {
                   {formatDate(game.date)}
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: '#FFF' }}>
-                  vs {game.opponent || 'TBD'}
+                  {game.opponent?.startsWith('@ ')
+                    ? `@ ${game.opponent.slice(2)}`
+                    : `vs ${game.opponent || 'TBD'}`}
                 </div>
                 <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
                   {homeAway === 'HOME' ? '🏠' : '🚌'} {homeAway}
+                  {gameData.completed && gameData.score && (
+                    <span style={{
+                      marginLeft: 8,
+                      fontWeight: 900,
+                      color: gameData.result === 'W' ? '#00C853' : gameData.result === 'L' ? '#FF1744' : '#FF9800',
+                    }}>
+                      {gameData.result === 'W' ? 'W' : gameData.result === 'L' ? 'L' : 'T'}{' '}
+                      {gameData.score.us}–{gameData.score.them}
+                    </span>
+                  )}
                 </div>
               </div>
               <div style={styles.viewBtn}>

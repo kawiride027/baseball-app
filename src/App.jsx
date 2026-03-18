@@ -201,6 +201,24 @@ function App() {
     updateData((prev) => ({ ...prev, viewingInning: inning }))
   }
 
+  const completeGame = ({ scoreUs, scoreThem, result }) => {
+    if (!data.activeGameId) return
+    updateData((prev) => ({
+      ...prev,
+      activeGameId: null,
+      games: {
+        ...prev.games,
+        [prev.activeGameId]: {
+          ...prev.games[prev.activeGameId],
+          completed: true,
+          score: { us: scoreUs, them: scoreThem },
+          result,
+        },
+      },
+    }))
+    setCurrentTab('game')
+  }
+
   const renderScreen = () => {
     // Batting order setup (Step 3: after home/away, before positions)
     if (showBattingOrderSetup && data.activeGameId) {
@@ -313,6 +331,8 @@ function App() {
             opponent={activeSchedule?.opponent}
             isHome={activeGame.isHome}
             onSwitchToField={() => setCurrentTab('field')}
+            teamName={data.teamName}
+            onGameComplete={completeGame}
           />
         )
       case 'history':

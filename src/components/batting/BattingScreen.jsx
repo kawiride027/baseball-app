@@ -4,6 +4,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } 
 import { CSS } from '@dnd-kit/utilities'
 import PinModal from '../field/PinModal'
 import LastOutModal from './LastOutModal'
+import GameOverModal from './GameOverModal'
 import { INNINGS, ordinalInning } from '../../constants'
 
 function SortablePlayer({ player, index, isNextUp, isLastOut }) {
@@ -79,10 +80,12 @@ function SortablePlayer({ player, index, isNextUp, isLastOut }) {
   )
 }
 
-export default function BattingScreen({ roster, battingOrder, updateBattingOrder, atBat, updateAtBat, opponent, onSwitchToField }) {
+export default function BattingScreen({ roster, battingOrder, updateBattingOrder, atBat, updateAtBat, opponent, isHome, onSwitchToField, teamName, onGameComplete }) {
   const [pendingReorder, setPendingReorder] = useState(null)
   const [showPin, setShowPin] = useState(false)
   const [showLastOut, setShowLastOut] = useState(false)
+  const [showGameOver, setShowGameOver] = useState(false)
+  const [pendingLastOut, setPendingLastOut] = useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -120,15 +123,51 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
   const handleLastOutSelect = (playerId) => {
     const idx = battingOrder.indexOf(playerId)
     const nextIdx = idx >= 0 ? (idx + 1) % battingOrder.length : 0
-    updateAtBat({
-      isAtBat: false,
-      lastOutPlayerId: playerId,
-      nextBatterIndex: nextIdx,
-      currentInning: Math.min(atBat.currentInning + 1, INNINGS),
-    })
-    setShowLastOut(false)
-    // Switch to field positions screen after ending at-bat
+
+    if (atBat.currentInning >= INNINGS) {
+      // Last inning or extra innings — ask if game is over
+      setPendingLastOut({ playerId, nextIdx })
+      setShowLastOut(false)
+      setShowGameOver(true)
+    } else {
+      updateAtBat({
+        isAtBat: false,
+        lastOutPlayerId: playerId,
+        nextBatterIndex: nextIdx,
+        currentInning: atBat.currentInning + 1,
+      })
+      setShowLastOut(false)
+      if (onSwitchToField) onSwitchToField()
+    }
+  }
+
+  const handleGameOverNo = () => {
+    // Not over — continue to extra innings
+    if (pendingLastOut) {
+      updateAtBat({
+        isAtBat: false,
+        lastOutPlayerId: pendingLastOut.playerId,
+        nextBatterIndex: pendingLastOut.nextIdx,
+        currentInning: atBat.currentInning + 1,
+      })
+    }
+    setShowGameOver(false)
+    setPendingLastOut(null)
     if (onSwitchToField) onSwitchToField()
+  }
+
+  const handleGameOverDone = ({ scoreUs, scoreThem, result }) => {
+    if (pendingLastOut) {
+      updateAtBat({
+        isAtBat: false,
+        lastOutPlayerId: pendingLastOut.playerId,
+        nextBatterIndex: pendingLastOut.nextIdx,
+        currentInning: atBat.currentInning,
+      })
+    }
+    setShowGameOver(false)
+    setPendingLastOut(null)
+    if (onGameComplete) onGameComplete({ scoreUs, scoreThem, result })
   }
 
   const orderedPlayers = battingOrder
@@ -220,6 +259,15 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
           battingOrder={battingOrder}
           onSelect={handleLastOutSelect}
           onCancel={() => setShowLastOut(false)}
+        />
+      )}
+
+      {showGameOver && (
+        <GameOverModal
+          teamName={teamName}
+          opponent={opponent}
+          onNo={handleGameOverNo}
+          onDone={handleGameOverDone}
         />
       )}
     </div>
