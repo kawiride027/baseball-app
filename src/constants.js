@@ -37,6 +37,8 @@ export function ordinalInning(n) {
 }
 
 export const STORAGE_KEY = 'baseball_app_data';
+export const ROLE_KEY = 'baseball_app_role';
+export const ROLES = { COACH: 'coach', PARENT: 'parent' };
 
 export const DEFAULT_DATA = {
   teamName: '',

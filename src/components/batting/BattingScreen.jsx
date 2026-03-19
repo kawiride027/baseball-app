@@ -80,7 +80,7 @@ function SortablePlayer({ player, index, isNextUp, isLastOut }) {
   )
 }
 
-export default function BattingScreen({ roster, battingOrder, updateBattingOrder, atBat, updateAtBat, opponent, isHome, onSwitchToField, teamName, onGameComplete }) {
+export default function BattingScreen({ roster, battingOrder, updateBattingOrder, atBat, updateAtBat, opponent, isHome, onSwitchToField, teamName, onGameComplete, isParent }) {
   const [pendingReorder, setPendingReorder] = useState(null)
   const [showPin, setShowPin] = useState(false)
   const [showLastOut, setShowLastOut] = useState(false)
@@ -185,30 +185,49 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
       </div>
 
       {/* At-bat controls */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexWrap: 'wrap',
-        gap: 10,
-        marginBottom: 16,
-        padding: 12,
-        background: atBat.isAtBat ? 'rgba(0,200,83,0.1)' : '#1a1a1a',
-        borderRadius: 10,
-        border: atBat.isAtBat ? '2px solid #00C853' : '2px solid #333',
-      }}>
-        <div style={{ textAlign: 'center', flex: '1 1 100%', marginBottom: 4 }}>
-          <span style={{ fontSize: 14, color: '#888' }}>Batting: </span>
-          <span style={{ fontSize: 20, fontWeight: 900, color: '#FFD700' }}>{ordinalInning(atBat.currentInning)} Inning</span>
+      {isParent ? (
+        <div style={{
+          textAlign: 'center',
+          padding: 12,
+          marginBottom: 16,
+          background: atBat.isAtBat ? 'rgba(0,200,83,0.1)' : '#1a1a1a',
+          borderRadius: 10,
+          border: atBat.isAtBat ? '2px solid #00C853' : '2px solid #333',
+        }}>
+          <span style={{ fontSize: 14, color: '#888' }}>Current Inning: </span>
+          <span style={{ fontSize: 20, fontWeight: 900, color: '#FFD700' }}>{ordinalInning(atBat.currentInning)}</span>
+          {atBat.isAtBat && (
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#00C853', marginTop: 4 }}>
+              AT BAT NOW
+            </div>
+          )}
         </div>
-        <button
-          className={`btn ${atBat.isAtBat ? 'btn--danger' : 'btn--success'}`}
-          onClick={handleAtBatToggle}
-          style={{ fontSize: 16, minWidth: 180 }}
-        >
-          {atBat.isAtBat ? '⬛ END AT BAT' : '▶ START AT BAT'}
-        </button>
-      </div>
+      ) : (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: 10,
+          marginBottom: 16,
+          padding: 12,
+          background: atBat.isAtBat ? 'rgba(0,200,83,0.1)' : '#1a1a1a',
+          borderRadius: 10,
+          border: atBat.isAtBat ? '2px solid #00C853' : '2px solid #333',
+        }}>
+          <div style={{ textAlign: 'center', flex: '1 1 100%', marginBottom: 4 }}>
+            <span style={{ fontSize: 14, color: '#888' }}>Batting: </span>
+            <span style={{ fontSize: 20, fontWeight: 900, color: '#FFD700' }}>{ordinalInning(atBat.currentInning)} Inning</span>
+          </div>
+          <button
+            className={`btn ${atBat.isAtBat ? 'btn--danger' : 'btn--success'}`}
+            onClick={handleAtBatToggle}
+            style={{ fontSize: 16, minWidth: 180 }}
+          >
+            {atBat.isAtBat ? '⬛ END AT BAT' : '▶ START AT BAT'}
+          </button>
+        </div>
+      )}
 
       {/* Last out info */}
       {lastOutPlayer && (
@@ -226,24 +245,74 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
         </div>
       )}
 
-      {/* Sortable batting order */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={battingOrder} strategy={verticalListSortingStrategy}>
+      {/* Batting order list */}
+      {isParent ? (
+        <div>
           {orderedPlayers.map((player, index) => (
-            <SortablePlayer
-              key={player.id}
-              player={player}
-              index={index}
-              isNextUp={index === atBat.nextBatterIndex}
-              isLastOut={player.id === atBat.lastOutPlayerId}
-            />
+            <div key={player.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 16px',
+              marginBottom: 4,
+              background: index === atBat.nextBatterIndex ? 'rgba(255,215,0,0.15)' : '#252525',
+              borderRadius: 8,
+              border: index === atBat.nextBatterIndex ? '2px solid #FFD700' : '2px solid transparent',
+              fontSize: 17,
+              fontWeight: 700,
+              color: '#FFF',
+            }}>
+              <span style={{
+                width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '50%',
+                background: index === atBat.nextBatterIndex ? '#FFD700' : '#444',
+                color: index === atBat.nextBatterIndex ? '#000' : '#FFF',
+                fontSize: 15, fontWeight: 900, flexShrink: 0,
+              }}>
+                {index + 1}
+              </span>
+              <span style={{ color: '#FFD700', fontSize: 15, flexShrink: 0 }}>#{player.jerseyNumber}</span>
+              <span style={{ flex: 1 }}>{player.name}</span>
+              {index === atBat.nextBatterIndex && (
+                <span style={{
+                  padding: '3px 10px', background: '#FFD700', color: '#000',
+                  borderRadius: 4, fontSize: 11, fontWeight: 900, letterSpacing: 1,
+                }}>
+                  UP NEXT
+                </span>
+              )}
+              {player.id === atBat.lastOutPlayerId && (
+                <span style={{
+                  padding: '3px 10px', background: '#FF1744', color: '#FFF',
+                  borderRadius: 4, fontSize: 11, fontWeight: 900,
+                }}>
+                  LAST OUT
+                </span>
+              )}
+            </div>
           ))}
-        </SortableContext>
-      </DndContext>
+        </div>
+      ) : (
+        <>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={battingOrder} strategy={verticalListSortingStrategy}>
+              {orderedPlayers.map((player, index) => (
+                <SortablePlayer
+                  key={player.id}
+                  player={player}
+                  index={index}
+                  isNextUp={index === atBat.nextBatterIndex}
+                  isLastOut={player.id === atBat.lastOutPlayerId}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
 
-      <div style={{ marginTop: 16, fontSize: 13, color: '#555', textAlign: 'center' }}>
-        Drag players to reorder batting lineup (PIN required)
-      </div>
+          <div style={{ marginTop: 16, fontSize: 13, color: '#555', textAlign: 'center' }}>
+            Drag players to reorder batting lineup (PIN required)
+          </div>
+        </>
+      )}
 
       {showPin && (
         <PinModal

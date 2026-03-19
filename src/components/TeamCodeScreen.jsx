@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { db } from '../firebase'
-import { generateTeamCode, setStoredTeamCode } from '../hooks/useLocalStorage'
-import { DEFAULT_DATA } from '../constants'
+import { generateTeamCode, setStoredTeamCode, setStoredRole } from '../hooks/useLocalStorage'
+import { DEFAULT_DATA, ROLES } from '../constants'
 
 export default function TeamCodeScreen({ onTeamReady }) {
-  const [mode, setMode] = useState(null) // null | 'create' | 'join'
+  const [mode, setMode] = useState(null) // null | 'create' | 'join' | 'join-parent'
   const [teamName, setTeamName] = useState('')
   const [joinCode, setJoinCode] = useState('')
   const [error, setError] = useState('')
@@ -20,6 +20,8 @@ export default function TeamCodeScreen({ onTeamReady }) {
     setError('')
     try {
       const code = generateTeamCode()
+      const parentCode = generateTeamCode()
+
       // Check for existing localStorage data to migrate
       let existingData = null
       try {
@@ -28,13 +30,17 @@ export default function TeamCodeScreen({ onTeamReady }) {
       } catch (e) { /* ignore parse errors */ }
 
       const initialData = existingData
-        ? { ...DEFAULT_DATA, ...existingData, teamName: teamName.trim() }
-        : { ...DEFAULT_DATA, teamName: teamName.trim() }
+        ? { ...DEFAULT_DATA, ...existingData, teamName: teamName.trim(), parentCode }
+        : { ...DEFAULT_DATA, teamName: teamName.trim(), parentCode }
 
       await setDoc(doc(db, 'teams', code), initialData)
+      // Create reverse lookup for parent code
+      await setDoc(doc(db, 'parentCodes', parentCode), { teamCode: code })
+
       setStoredTeamCode(code)
+      setStoredRole(ROLES.COACH)
       localStorage.setItem('baseball_app_data', JSON.stringify(initialData))
-      onTeamReady(code)
+      onTeamReady(code, ROLES.COACH)
     } catch (err) {
       setError('Failed to create team. Check your internet connection.')
       console.error(err)
@@ -59,8 +65,45 @@ export default function TeamCodeScreen({ onTeamReady }) {
       }
       const teamData = snapshot.data()
       setStoredTeamCode(code)
+      setStoredRole(ROLES.COACH)
       localStorage.setItem('baseball_app_data', JSON.stringify(teamData))
-      onTeamReady(code)
+      onTeamReady(code, ROLES.COACH)
+    } catch (err) {
+      setError('Failed to join. Check your internet connection.')
+      console.error(err)
+    }
+    setLoading(false)
+  }
+
+  const handleJoinParent = async () => {
+    const code = joinCode.trim().toUpperCase()
+    if (!code) {
+      setError('Enter a parent spectator code')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      // Look up parent code in reverse-lookup collection
+      const parentDoc = await getDoc(doc(db, 'parentCodes', code))
+      if (!parentDoc.exists()) {
+        setError('Parent code not found. Check the code and try again.')
+        setLoading(false)
+        return
+      }
+      const { teamCode } = parentDoc.data()
+      // Verify team still exists
+      const teamSnapshot = await getDoc(doc(db, 'teams', teamCode))
+      if (!teamSnapshot.exists()) {
+        setError('Team no longer exists.')
+        setLoading(false)
+        return
+      }
+      const teamData = teamSnapshot.data()
+      setStoredTeamCode(teamCode)
+      setStoredRole(ROLES.PARENT)
+      localStorage.setItem('baseball_app_data', JSON.stringify(teamData))
+      onTeamReady(teamCode, ROLES.PARENT)
     } catch (err) {
       setError('Failed to join. Check your internet connection.')
       console.error(err)
@@ -122,9 +165,33 @@ export default function TeamCodeScreen({ onTeamReady }) {
             color: '#00E5FF',
             cursor: 'pointer',
             padding: 16,
+            marginBottom: 16,
           }}
         >
           Join Existing Team
+        </button>
+
+        <div style={{ fontSize: 13, color: '#555', margin: '4px 0 16px 0' }}>
+          ── or ──
+        </div>
+
+        <button
+          onClick={() => setMode('join-parent')}
+          style={{
+            width: '100%',
+            maxWidth: 320,
+            minHeight: 56,
+            fontSize: 18,
+            fontWeight: 900,
+            border: '3px solid #FF9800',
+            borderRadius: 12,
+            background: 'rgba(255,152,0,0.1)',
+            color: '#FF9800',
+            cursor: 'pointer',
+            padding: 16,
+          }}
+        >
+          I'm a Parent (Spectator)
         </button>
 
         <div style={{
@@ -139,7 +206,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
             lineHeight: 1.6,
             fontStyle: 'italic',
           }}>
-            "I built this app as a coach to help keep sanity in the dugout. I hope you find it as helpful as I have for managing the younger kids. Enjoy!"
+            "I built this app as a coach and dad to help keep sanity in the dugout. I hope you find it as helpful as I have for managing the younger teams. Enjoy and Play Ball!"
           </div>
           <div style={{
             fontSize: 14,
@@ -147,14 +214,14 @@ export default function TeamCodeScreen({ onTeamReady }) {
             fontWeight: 700,
             marginTop: 10,
           }}>
-            Play Ball! ⚾
+            ⚾
           </div>
           <div style={{
             fontSize: 13,
             color: '#888',
             marginTop: 4,
           }}>
-            – Dustin Bradey
+            – Dustin Bradley
           </div>
         </div>
       </div>
@@ -243,7 +310,94 @@ export default function TeamCodeScreen({ onTeamReady }) {
     )
   }
 
-  // Join team screen
+  // Join as Parent screen
+  if (mode === 'join-parent') {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        background: '#121212',
+      }}>
+        <div style={{ fontSize: 28, fontWeight: 900, color: '#FF9800', marginBottom: 8 }}>
+          Parent Spectator Mode
+        </div>
+        <div style={{ fontSize: 14, color: '#888', marginBottom: 24, textAlign: 'center' }}>
+          Enter the parent code shared by the coach
+        </div>
+
+        <input
+          type="text"
+          placeholder="XXXX-XXXX"
+          value={joinCode}
+          onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+          style={{
+            width: '100%',
+            maxWidth: 320,
+            fontSize: 28,
+            fontWeight: 900,
+            padding: '14px 16px',
+            borderRadius: 10,
+            border: '2px solid #444',
+            background: '#1e1e1e',
+            color: '#FF9800',
+            marginBottom: 16,
+            textAlign: 'center',
+            letterSpacing: 3,
+          }}
+          maxLength={9}
+          autoFocus
+        />
+
+        {error && (
+          <div style={{ color: '#FF1744', fontSize: 14, marginBottom: 12, textAlign: 'center' }}>
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleJoinParent}
+          disabled={loading}
+          style={{
+            width: '100%',
+            maxWidth: 320,
+            minHeight: 56,
+            fontSize: 18,
+            fontWeight: 900,
+            border: '3px solid #FF9800',
+            borderRadius: 12,
+            background: 'rgba(255,152,0,0.1)',
+            color: '#FF9800',
+            cursor: loading ? 'wait' : 'pointer',
+            padding: 14,
+            marginBottom: 12,
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          {loading ? 'Joining...' : 'Join as Spectator'}
+        </button>
+
+        <button
+          onClick={() => { setMode(null); setError(''); setJoinCode('') }}
+          style={{
+            fontSize: 14,
+            color: '#666',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 8,
+          }}
+        >
+          ← Back
+        </button>
+      </div>
+    )
+  }
+
+  // Join team screen (coach)
   return (
     <div style={{
       minHeight: '100vh',
@@ -313,7 +467,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
       </button>
 
       <button
-        onClick={() => { setMode(null); setError('') }}
+        onClick={() => { setMode(null); setError(''); setJoinCode('') }}
         style={{
           fontSize: 14,
           color: '#666',

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -69,6 +69,7 @@ export default function FieldViewScreen({
   markPlayerAbsent,
   unmarkPlayerAbsent,
   resetGame,
+  isParent,
 }) {
   // Unlock/lock mode: false = locked (kids view), true = coach is editing
   const [unlocked, setUnlocked] = useState(false)
@@ -89,6 +90,13 @@ export default function FieldViewScreen({
   const [showUnmarkAbsentPin, setShowUnmarkAbsentPin] = useState(false)
   const [pendingUnmarkId, setPendingUnmarkId] = useState(null)
 
+  // Parents use local inning state (no PIN, no Firestore write)
+  const [localViewingInning, setLocalViewingInning] = useState(viewingInning)
+  useEffect(() => {
+    if (isParent) setLocalViewingInning(viewingInning)
+  }, [viewingInning, isParent])
+  const effectiveInning = isParent ? localViewingInning : viewingInning
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
@@ -99,7 +107,7 @@ export default function FieldViewScreen({
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   )
 
-  const currentAssignment = assignments[String(viewingInning)] || {}
+  const currentAssignment = assignments[String(effectiveInning)] || {}
 
   // Drag is only functional when unlocked
   const handleDragEnd = useCallback((event) => {
@@ -113,7 +121,7 @@ export default function FieldViewScreen({
 
     // Apply swap immediately (already unlocked)
     applySwap(fromData.playerId, fromData.position, toPosition)
-  }, [unlocked, currentAssignment, viewingInning])
+  }, [unlocked, currentAssignment, effectiveInning])
 
   const applySwap = (playerId, fromPosition, toPosition) => {
     const assignment = { ...currentAssignment }
@@ -138,7 +146,7 @@ export default function FieldViewScreen({
       assignment[fromPosition] = existingPlayerId || null
     }
 
-    updateAssignments(viewingInning, assignment)
+    updateAssignments(effectiveInning, assignment)
   }
 
   const handleUnlockRequest = () => {
@@ -260,7 +268,7 @@ export default function FieldViewScreen({
     if (pendingUnmarkId) { unmarkPlayerAbsent(pendingUnmarkId); setPendingUnmarkId(null) }
   }
 
-  const awaitingFinalFielding = !isHome && atBat.awaitingFinalFielding && viewingInning >= INNINGS
+  const awaitingFinalFielding = !isHome && atBat.awaitingFinalFielding && effectiveInning >= INNINGS
 
   const battingHalf = isHome ? 'Bottom' : 'Top'
   const fieldingHalf = isHome ? 'Top' : 'Bottom'
@@ -329,16 +337,19 @@ export default function FieldViewScreen({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
         <button
           className="btn btn--small"
-          onClick={() => handleInningChange(Math.max(1, viewingInning - 1))}
-          disabled={viewingInning <= 1}
-          style={{ opacity: viewingInning <= 1 ? 0.3 : 1, minWidth: 48 }}
+          onClick={() => isParent
+            ? setLocalViewingInning(Math.max(1, effectiveInning - 1))
+            : handleInningChange(Math.max(1, effectiveInning - 1))
+          }
+          disabled={effectiveInning <= 1}
+          style={{ opacity: effectiveInning <= 1 ? 0.3 : 1, minWidth: 48 }}
         >
           ◀
         </button>
 
         <div style={{ textAlign: 'center', flex: 1 }}>
           <div style={{ fontSize: 36, fontWeight: 900, color: '#FFD700', lineHeight: 1 }}>
-            {ordinalInning(viewingInning)} INNING
+            {ordinalInning(effectiveInning)} INNING
           </div>
           <div style={{ fontSize: 12, color: '#888' }}>
             of {INNINGS} · {fieldingHalf}: We Field · {battingHalf}: We Bat
@@ -347,58 +358,80 @@ export default function FieldViewScreen({
 
         <button
           className="btn btn--small"
-          onClick={() => handleInningChange(Math.min(INNINGS, viewingInning + 1))}
-          disabled={viewingInning >= INNINGS}
-          style={{ opacity: viewingInning >= INNINGS ? 0.3 : 1, minWidth: 48 }}
+          onClick={() => isParent
+            ? setLocalViewingInning(Math.min(INNINGS, effectiveInning + 1))
+            : handleInningChange(Math.min(INNINGS, effectiveInning + 1))
+          }
+          disabled={effectiveInning >= INNINGS}
+          style={{ opacity: effectiveInning >= INNINGS ? 0.3 : 1, minWidth: 48 }}
         >
           ▶
         </button>
       </div>
 
-      {/* Action bar: unlock/lock + start at bat */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-        {!unlocked ? (
+      {/* LIVE indicator for parents */}
+      {isParent && (
+        <div style={{
+          textAlign: 'center',
+          padding: '6px 12px',
+          marginBottom: 8,
+          background: 'rgba(255,152,0,0.1)',
+          border: '1px solid #FF9800',
+          borderRadius: 8,
+          fontSize: 12,
+          fontWeight: 700,
+          color: '#FF9800',
+        }}>
+          LIVE – Updates in real-time as the coach makes changes
+        </div>
+      )}
+
+      {/* Action bar: unlock/lock + start at bat (coaches only) */}
+      {!isParent && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+          {!unlocked ? (
+            <button
+              className="btn btn--small"
+              onClick={handleUnlockRequest}
+              style={{ fontSize: 13, borderColor: '#FF9800', color: '#FF9800' }}
+            >
+              🔒 Unlock to Edit
+            </button>
+          ) : (
+            <button
+              className="btn btn--small btn--accent"
+              onClick={handleLock}
+              style={{ fontSize: 13 }}
+            >
+              ✅ Lock Positions
+            </button>
+          )}
+
           <button
-            className="btn btn--small"
-            onClick={handleUnlockRequest}
-            style={{ fontSize: 13, borderColor: '#FF9800', color: '#FF9800' }}
-          >
-            🔒 Unlock to Edit
-          </button>
-        ) : (
-          <button
-            className="btn btn--small btn--accent"
-            onClick={handleLock}
+            className="btn btn--small btn--success"
+            onClick={handleStartAtBat}
             style={{ fontSize: 13 }}
           >
-            ✅ Lock Positions
+            ⚾ Start At Bat
           </button>
-        )}
 
-        <button
-          className="btn btn--small btn--success"
-          onClick={handleStartAtBat}
-          style={{ fontSize: 13 }}
-        >
-          ⚾ Start At Bat
-        </button>
+          <button
+            className="btn btn--small"
+            onClick={handleEditBatOrderRequest}
+            style={{ fontSize: 13, borderColor: '#00E5FF', color: '#00E5FF' }}
+          >
+            📋 Edit Lineup
+          </button>
 
-        <button
-          className="btn btn--small"
-          onClick={handleEditBatOrderRequest}
-          style={{ fontSize: 13, borderColor: '#00E5FF', color: '#00E5FF' }}
-        >
-          📋 Edit Lineup
-        </button>
-
-        <button
-          className="btn btn--small"
-          onClick={handleMarkAbsentRequest}
-          style={{ fontSize: 13, borderColor: '#FF1744', color: '#FF1744' }}
-        >
-          ❌ Mark Absent
-        </button>
-      </div>
+          <button
+            className="btn btn--small"
+            onClick={handleMarkAbsentRequest}
+            style={{ fontSize: 13, borderColor: '#FF1744', color: '#FF1744' }}
+          >
+            ❌ Mark Absent
+          </button>
+        </div>
+      )}
 
       {/* Next 3 batters bar */}
       {battingOrder && battingOrder.length > 0 && (
@@ -486,7 +519,22 @@ export default function FieldViewScreen({
             {absentIds.map((pid) => {
               const p = roster.find((r) => r.id === pid)
               if (!p) return null
-              return (
+              return isParent ? (
+                <div
+                  key={pid}
+                  style={{
+                    padding: '6px 10px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    background: '#2A2A2A',
+                    color: '#FF9800',
+                    border: '1px solid #555',
+                    borderRadius: 6,
+                  }}
+                >
+                  #{p.jerseyNumber} {(p.nickname || p.name).split(' ')[0]}
+                </div>
+              ) : (
                 <button
                   key={pid}
                   onClick={() => handleUnmarkAbsentRequest(pid)}
@@ -509,8 +557,8 @@ export default function FieldViewScreen({
         </div>
       )}
 
-      {/* End Game button — shown for away team fielding the final inning */}
-      {awaitingFinalFielding && (
+      {/* End Game button — shown for away team fielding the final inning (coaches only) */}
+      {awaitingFinalFielding && !isParent && (
         <div style={{ textAlign: 'center', marginTop: 12 }}>
           <div style={{
             padding: '10px 16px',
@@ -522,7 +570,7 @@ export default function FieldViewScreen({
             fontWeight: 700,
             color: '#00C853',
           }}>
-            Bottom of the {ordinalInning(viewingInning)} — We're fielding. When the inning ends:
+            Bottom of the {ordinalInning(effectiveInning)} — We're fielding. When the inning ends:
           </div>
           <button
             onClick={handleEndGameRequest}
@@ -548,23 +596,25 @@ export default function FieldViewScreen({
       <div style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#555' }}>
         {teamName || 'Our Team'} vs {opponent || 'TBD'} · {isHome ? '🏠 HOME' : '🚌 AWAY'}
       </div>
-      <div style={{ textAlign: 'center', marginTop: 12 }}>
-        <button
-          onClick={handleResetRequest}
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#666',
-            background: 'transparent',
-            border: '1px solid #444',
-            borderRadius: 6,
-            padding: '6px 14px',
-            cursor: 'pointer',
-          }}
-        >
-          Reset Game (wrong team?)
-        </button>
-      </div>
+      {!isParent && (
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <button
+            onClick={handleResetRequest}
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#666',
+              background: 'transparent',
+              border: '1px solid #444',
+              borderRadius: 6,
+              padding: '6px 14px',
+              cursor: 'pointer',
+            }}
+          >
+            Reset Game (wrong team?)
+          </button>
+        </div>
+      )}
 
       {/* Unlock PIN modal */}
       {showUnlockPin && (

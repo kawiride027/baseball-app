@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { STORAGE_KEY, DEFAULT_DATA } from '../constants';
+import { STORAGE_KEY, DEFAULT_DATA, ROLE_KEY, ROLES } from '../constants';
 
 const MAX_UNDO_STACK = 30;
 const TEAM_CODE_KEY = 'baseball_team_code';
@@ -29,7 +29,20 @@ export function clearStoredTeamCode() {
   localStorage.removeItem(TEAM_CODE_KEY);
 }
 
-export function useAppData() {
+// Get/set role from localStorage
+export function getStoredRole() {
+  return localStorage.getItem(ROLE_KEY) || ROLES.COACH;
+}
+
+export function setStoredRole(role) {
+  localStorage.setItem(ROLE_KEY, role);
+}
+
+export function clearStoredRole() {
+  localStorage.removeItem(ROLE_KEY);
+}
+
+export function useAppData(role) {
   const teamCode = getStoredTeamCode();
 
   // Initialize from localStorage cache (fast first paint)
@@ -121,7 +134,7 @@ export function useAppData() {
       return;
     }
 
-    if (teamCode) {
+    if (teamCode && role !== ROLES.PARENT) {
       const docRef = doc(db, 'teams', teamCode);
       setDoc(docRef, data, { merge: true }).catch((err) => {
         console.warn('Firestore write failed (offline, will sync later):', err.message);
@@ -158,6 +171,11 @@ export function useAppData() {
   }, []);
 
   const canUndo = undoStack.length > 0;
+
+  // Parents get read-only access — no-op writers, no undo
+  if (role === ROLES.PARENT) {
+    return [data, () => {}, () => {}, false];
+  }
 
   return [data, updateData, undo, canUndo];
 }

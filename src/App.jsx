@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { useAppData, getStoredTeamCode, clearStoredTeamCode } from './hooks/useLocalStorage'
-import { POSITIONS, INNINGS } from './constants'
+import { useAppData, getStoredTeamCode, clearStoredTeamCode, getStoredRole, clearStoredRole, generateTeamCode } from './hooks/useLocalStorage'
+import { doc, setDoc } from 'firebase/firestore'
+import { db } from './firebase'
+import { POSITIONS, INNINGS, ROLES } from './constants'
 import TeamCodeScreen from './components/TeamCodeScreen'
 import SetupScreen from './components/setup/SetupScreen'
 import GameSelectScreen from './components/gameSelect/GameSelectScreen'
@@ -13,37 +15,43 @@ import BattingOrderSetup from './components/field/BattingOrderSetup'
 import PinModal from './components/field/PinModal'
 import './App.css'
 
-const TABS = [
-  { id: 'setup', label: 'Team Setup' },
-  { id: 'game', label: "Today's Game" },
-  { id: 'field', label: 'Field Positions' },
-  { id: 'batting', label: 'Batting Order' },
-  { id: 'lineup', label: 'Team Summary' },
-  { id: 'history', label: 'History' },
+const ALL_TABS = [
+  { id: 'setup', label: 'Team Setup', coachOnly: true },
+  { id: 'game', label: "Today's Game", coachOnly: true },
+  { id: 'field', label: 'Field Positions', coachOnly: false },
+  { id: 'batting', label: 'Batting Order', coachOnly: false },
+  { id: 'lineup', label: 'Team Summary', coachOnly: true },
+  { id: 'history', label: 'History', coachOnly: false },
 ]
 
 function App() {
   const [teamCode, setTeamCode] = useState(getStoredTeamCode)
+  const [role, setRole] = useState(getStoredRole)
 
   // If no team code yet, show create/join screen
   if (!teamCode) {
-    return <TeamCodeScreen onTeamReady={(code) => {
+    return <TeamCodeScreen onTeamReady={(code, newRole) => {
       setTeamCode(code)
+      setRole(newRole || ROLES.COACH)
       // Force re-mount by reloading — ensures useAppData picks up new team code
       window.location.reload()
     }} />
   }
 
-  return <MainApp teamCode={teamCode} onLeaveTeam={() => {
+  return <MainApp teamCode={teamCode} role={role} onLeaveTeam={() => {
     clearStoredTeamCode()
+    clearStoredRole()
     localStorage.removeItem('baseball_app_data')
     setTeamCode(null)
+    setRole(null)
   }} />
 }
 
-function MainApp({ teamCode, onLeaveTeam }) {
-  const [data, updateData, undo, canUndo] = useAppData()
-  const [currentTab, setCurrentTab] = useState('setup')
+function MainApp({ teamCode, role, onLeaveTeam }) {
+  const isParent = role === ROLES.PARENT
+  const [data, updateData, undo, canUndo] = useAppData(role)
+  const TABS = isParent ? ALL_TABS.filter(t => !t.coachOnly) : ALL_TABS
+  const [currentTab, setCurrentTab] = useState(isParent ? 'field' : 'setup')
 
   // New game setup flow states
   const [showHomeAwayPicker, setShowHomeAwayPicker] = useState(false)
@@ -399,9 +407,15 @@ function MainApp({ teamCode, onLeaveTeam }) {
               <p style={{ fontSize: 20, color: 'var(--text-accent)', marginBottom: 16 }}>
                 No game selected
               </p>
-              <button className="btn btn--accent" onClick={() => setCurrentTab('game')}>
-                Select a Game
-              </button>
+              {isParent ? (
+                <p style={{ fontSize: 14, color: '#888' }}>
+                  The coach hasn't started a game yet. This page will update automatically when a game begins.
+                </p>
+              ) : (
+                <button className="btn btn--accent" onClick={() => setCurrentTab('game')}>
+                  Select a Game
+                </button>
+              )}
             </div>
           )
         }
@@ -424,6 +438,7 @@ function MainApp({ teamCode, onLeaveTeam }) {
             markPlayerAbsent={markPlayerAbsent}
             unmarkPlayerAbsent={unmarkPlayerAbsent}
             resetGame={resetGame}
+            isParent={isParent}
           />
         )
       case 'lineup':
@@ -454,9 +469,15 @@ function MainApp({ teamCode, onLeaveTeam }) {
               <p style={{ fontSize: 20, color: 'var(--text-accent)', marginBottom: 16 }}>
                 No game selected
               </p>
-              <button className="btn btn--accent" onClick={() => setCurrentTab('game')}>
-                Select a Game
-              </button>
+              {isParent ? (
+                <p style={{ fontSize: 14, color: '#888' }}>
+                  The coach hasn't started a game yet. This page will update automatically when a game begins.
+                </p>
+              ) : (
+                <button className="btn btn--accent" onClick={() => setCurrentTab('game')}>
+                  Select a Game
+                </button>
+              )}
             </div>
           )
         }
@@ -472,6 +493,7 @@ function MainApp({ teamCode, onLeaveTeam }) {
             onSwitchToField={() => setCurrentTab('field')}
             teamName={data.teamName}
             onGameComplete={completeGame}
+            isParent={isParent}
           />
         )
       case 'history':
@@ -497,12 +519,28 @@ function MainApp({ teamCode, onLeaveTeam }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '6px 12px',
-        background: '#0a0a0a',
-        borderBottom: '1px solid #222',
+        background: isParent ? '#1a1200' : '#0a0a0a',
+        borderBottom: isParent ? '2px solid #FF9800' : '1px solid #222',
         fontSize: 12,
       }}>
         <span style={{ color: '#888' }}>
           {data.teamName || 'My Team'}
+          {isParent && (
+            <span style={{
+              marginLeft: 8,
+              padding: '2px 8px',
+              background: 'rgba(255,152,0,0.2)',
+              border: '1px solid #FF9800',
+              borderRadius: 4,
+              color: '#FF9800',
+              fontSize: 10,
+              fontWeight: 900,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+            }}>
+              SPECTATOR
+            </span>
+          )}
         </span>
         <button
           onClick={() => setShowTeamInfo(!showTeamInfo)}
@@ -518,7 +556,7 @@ function MainApp({ teamCode, onLeaveTeam }) {
             letterSpacing: 1,
           }}
         >
-          Code: {teamCode}
+          {isParent ? 'Team Info' : `Code: ${teamCode}`}
         </button>
       </div>
 
@@ -530,15 +568,60 @@ function MainApp({ teamCode, onLeaveTeam }) {
           borderBottom: '1px solid #333',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: 14, color: '#888', marginBottom: 4 }}>
-            Share this code so others can join your team:
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: '#FFD700', letterSpacing: 3, marginBottom: 12 }}>
-            {teamCode}
-          </div>
+          {!isParent && (
+            <>
+              <div style={{ fontSize: 14, color: '#888', marginBottom: 4 }}>
+                Coach code (share with assistant coaches):
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: '#FFD700', letterSpacing: 3, marginBottom: 12 }}>
+                {teamCode}
+              </div>
+
+              {data.parentCode ? (
+                <>
+                  <div style={{ fontSize: 14, color: '#888', marginBottom: 4 }}>
+                    Parent spectator code (share with parents):
+                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#FF9800', letterSpacing: 3, marginBottom: 4 }}>
+                    {data.parentCode}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#666', marginBottom: 12 }}>
+                    Parents see field positions & batting order in real-time (read-only)
+                  </div>
+                </>
+              ) : (
+                <button
+                  onClick={async () => {
+                    const parentCode = generateTeamCode()
+                    updateData((prev) => ({ ...prev, parentCode }))
+                    try {
+                      await setDoc(doc(db, 'parentCodes', parentCode), { teamCode })
+                    } catch (e) {
+                      console.warn('Failed to create parent code lookup:', e)
+                    }
+                  }}
+                  style={{
+                    fontSize: 14, fontWeight: 700, color: '#FF9800',
+                    background: 'rgba(255,152,0,0.1)', border: '2px solid #FF9800',
+                    borderRadius: 8, padding: '10px 20px', cursor: 'pointer',
+                    marginBottom: 12,
+                  }}
+                >
+                  Generate Parent Spectator Code
+                </button>
+              )}
+            </>
+          )}
+
+          {isParent && (
+            <div style={{ fontSize: 14, color: '#888', marginBottom: 12 }}>
+              You are viewing as a spectator. Live updates from the coach will appear automatically.
+            </div>
+          )}
+
           <button
             onClick={() => {
-              if (window.confirm('Leave this team? You can rejoin later with the team code.')) {
+              if (window.confirm('Leave this team? You can rejoin later with the code.')) {
                 onLeaveTeam()
               }
             }}
@@ -573,8 +656,8 @@ function MainApp({ teamCode, onLeaveTeam }) {
         {renderScreen()}
       </div>
 
-      {/* Floating Undo button */}
-      {canUndo && (
+      {/* Floating Undo button (coaches only) */}
+      {canUndo && !isParent && (
         <button
           onClick={handleUndoRequest}
           style={undoBtnStyle}
@@ -584,8 +667,8 @@ function MainApp({ teamCode, onLeaveTeam }) {
         </button>
       )}
 
-      {/* Home/Away picker modal */}
-      {showHomeAwayPicker && (
+      {/* Home/Away picker modal (coaches only) */}
+      {showHomeAwayPicker && !isParent && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 360, textAlign: 'center' }}>
             <div className="modal-title">Home or Away?</div>
