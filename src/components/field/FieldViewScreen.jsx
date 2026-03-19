@@ -79,6 +79,8 @@ export default function FieldViewScreen({
   const [tempBatOrder, setTempBatOrder] = useState([])
   const [showEndGamePin, setShowEndGamePin] = useState(false)
   const [showGameOver, setShowGameOver] = useState(false)
+  const [showInningPin, setShowInningPin] = useState(false)
+  const [pendingInning, setPendingInning] = useState(null)
   const [showMarkAbsentPin, setShowMarkAbsentPin] = useState(false)
   const [showAbsentPicker, setShowAbsentPicker] = useState(false)
   const [showUnmarkAbsentPin, setShowUnmarkAbsentPin] = useState(false)
@@ -227,6 +229,16 @@ export default function FieldViewScreen({
     if (onGameComplete) onGameComplete({ scoreUs, scoreThem, result })
   }
 
+  // --- Inning navigation (PIN-protected) ---
+  const handleInningChange = (newInning) => {
+    setPendingInning(newInning)
+    setShowInningPin(true)
+  }
+  const handleInningPinConfirm = () => {
+    setShowInningPin(false)
+    if (pendingInning != null) { setViewingInning(pendingInning); setPendingInning(null) }
+  }
+
   // --- Mark Absent flow ---
   const handleMarkAbsentRequest = () => setShowMarkAbsentPin(true)
   const handleMarkAbsentPinConfirm = () => { setShowMarkAbsentPin(false); setShowAbsentPicker(true) }
@@ -309,7 +321,7 @@ export default function FieldViewScreen({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
         <button
           className="btn btn--small"
-          onClick={() => setViewingInning(Math.max(1, viewingInning - 1))}
+          onClick={() => handleInningChange(Math.max(1, viewingInning - 1))}
           disabled={viewingInning <= 1}
           style={{ opacity: viewingInning <= 1 ? 0.3 : 1, minWidth: 48 }}
         >
@@ -327,7 +339,7 @@ export default function FieldViewScreen({
 
         <button
           className="btn btn--small"
-          onClick={() => setViewingInning(Math.min(INNINGS, viewingInning + 1))}
+          onClick={() => handleInningChange(Math.min(INNINGS, viewingInning + 1))}
           disabled={viewingInning >= INNINGS}
           style={{ opacity: viewingInning >= INNINGS ? 0.3 : 1, minWidth: 48 }}
         >
@@ -649,6 +661,15 @@ export default function FieldViewScreen({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Inning change PIN modal */}
+      {showInningPin && (
+        <PinModal
+          message={`Enter coach PIN to switch to ${pendingInning ? ordinalInning(pendingInning) : ''} inning`}
+          onConfirm={handleInningPinConfirm}
+          onCancel={() => { setShowInningPin(false); setPendingInning(null) }}
+        />
       )}
 
       {/* Mark absent PIN modal */}

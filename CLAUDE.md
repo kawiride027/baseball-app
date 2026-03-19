@@ -54,6 +54,13 @@ src/
 - Base URL: `/baseball-app/`
 
 ## Recent Changes (latest first)
+- Mid-game "Mark Absent" feature (PIN-protected) — removes player from batting order, field positions, and bench
+- Bigger field view: removed maxWidth cap, larger player chips (110×64), bigger fonts for sunlight readability
+- Fixed away team game flow: after top of 6th → field view for bottom of 6th → End Game button
+- Fixed home team End Game button not clickable (GameOverModal was outside early return)
+- Fixed score display showing raw \u2013 escape instead of en-dash
+- PIN-protected game cancel/uncancel buttons
+- W/L results in green/red on Today's Game and Team Setup tabs
 - Made Import Schedule button prominent when no games exist
 - Added schedule import, game-over flow, and W/L tracking
 - Added GitHub Pages deployment workflow
