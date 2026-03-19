@@ -47,32 +47,32 @@ function DroppableSlot({ position, player, unlocked }) {
 
 export default function DiamondSVG({ roster, assignment, unlocked }) {
   return (
-    <svg viewBox="0 0 500 480" style={{ width: '100%', display: 'block', margin: '0 auto' }}>
+    <svg viewBox="0 0 620 400" style={{ width: '100%', display: 'block', margin: '0 auto' }}>
       {/* Grass background */}
-      <rect x="0" y="0" width="500" height="480" rx="16" fill="#1a472a" />
+      <rect x="0" y="0" width="620" height="400" rx="16" fill="#1a472a" />
 
       {/* Outfield arc */}
-      <path d="M 20,130 Q 250,-20 480,130" fill="none" stroke="#2d7a3a" strokeWidth="2" strokeDasharray="6 4" />
+      <path d="M 25,108 Q 310,-17 595,108" fill="none" stroke="#2d7a3a" strokeWidth="2" strokeDasharray="6 4" />
 
       {/* Infield dirt */}
-      <polygon points="250,155 385,270 250,390 115,270" fill="#6B5210" opacity="0.5" />
+      <polygon points="310,129 477,225 310,325 143,225" fill="#6B5210" opacity="0.5" />
 
       {/* Base paths (white lines) */}
-      <line x1="250" y1="160" x2="380" y2="268" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-      <line x1="380" y1="268" x2="250" y2="385" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-      <line x1="250" y1="385" x2="120" y2="268" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
-      <line x1="120" y1="268" x2="250" y2="160" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
+      <line x1="310" y1="133" x2="471" y2="223" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
+      <line x1="471" y1="223" x2="310" y2="321" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
+      <line x1="310" y1="321" x2="149" y2="223" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
+      <line x1="149" y1="223" x2="310" y2="133" stroke="rgba(255,255,255,0.6)" strokeWidth="2" />
 
       {/* Bases */}
-      <rect x="244" y="154" width="12" height="12" fill="white" transform="rotate(45 250 160)" />
-      <rect x="374" y="262" width="12" height="12" fill="white" transform="rotate(45 380 268)" />
-      <rect x="114" y="262" width="12" height="12" fill="white" transform="rotate(45 120 268)" />
+      <rect x="304" y="127" width="12" height="12" fill="white" transform="rotate(45 310 133)" />
+      <rect x="465" y="217" width="12" height="12" fill="white" transform="rotate(45 471 223)" />
+      <rect x="143" y="217" width="12" height="12" fill="white" transform="rotate(45 149 223)" />
 
       {/* Home plate */}
-      <polygon points="250,385 244,393 250,399 256,393" fill="white" />
+      <polygon points="310,321 304,327 310,333 316,327" fill="white" />
 
       {/* Pitcher's mound */}
-      <circle cx="250" cy="260" r="8" fill="#8B6914" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+      <circle cx="310" cy="220" r="8" fill="#8B6914" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
 
       {/* Position slots */}
       {POSITIONS.map((pos) => {

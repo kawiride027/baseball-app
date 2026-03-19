@@ -3,17 +3,17 @@ export const INNINGS = 6;
 export const PIN_CODE = '999';
 
 export const POSITION_COORDS = {
-  LF:  { x: 60,  y: 75 },
-  LCF: { x: 155, y: 45 },
-  CF:  { x: 250, y: 28 },
-  RCF: { x: 345, y: 45 },
-  RF:  { x: 440, y: 75 },
-  SS:  { x: 170, y: 195 },
-  '2B': { x: 330, y: 195 },
-  '3B': { x: 80,  y: 290 },
-  P:   { x: 250, y: 230 },
-  '1B': { x: 420, y: 290 },
-  C:   { x: 250, y: 430 },
+  LF:  { x: 74,  y: 63 },
+  LCF: { x: 192, y: 38 },
+  CF:  { x: 310, y: 34 },
+  RCF: { x: 428, y: 38 },
+  RF:  { x: 546, y: 63 },
+  SS:  { x: 195, y: 155 },
+  '2B': { x: 425, y: 155 },
+  '3B': { x: 99,  y: 242 },
+  P:   { x: 310, y: 200 },
+  '1B': { x: 521, y: 242 },
+  C:   { x: 310, y: 358 },
 };
 
 export const POSITION_LABELS = {
