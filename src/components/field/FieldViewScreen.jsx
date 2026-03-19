@@ -63,6 +63,7 @@ export default function FieldViewScreen({
   battingOrder,
   updateBattingOrder,
   isHome,
+  onGameComplete,
 }) {
   // Unlock/lock mode: false = locked (kids view), true = coach is editing
   const [unlocked, setUnlocked] = useState(false)
@@ -205,6 +206,7 @@ export default function FieldViewScreen({
         opponent={opponent}
         onExitAtBat={handleExitAtBat}
         setViewingInning={setViewingInning}
+        onGameComplete={onGameComplete}
       />
     )
   }

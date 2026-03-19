@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import PinModal from './PinModal'
+import GameOverModal from '../batting/GameOverModal'
 import { INNINGS, ordinalInning } from '../../constants'
 
 export default function AtBatView({
@@ -12,11 +13,13 @@ export default function AtBatView({
   opponent,
   onExitAtBat,
   setViewingInning,
+  onGameComplete,
 }) {
   const [selectedLastOut, setSelectedLastOut] = useState(null)
   const [showPin, setShowPin] = useState(false)
   const [lastOutConfirmed, setLastOutConfirmed] = useState(false)
   const [confirmedPlayer, setConfirmedPlayer] = useState(null)
+  const [showGameOver, setShowGameOver] = useState(false)
 
   const orderedPlayers = battingOrder
     .map((id) => roster.find((p) => p.id === id))
@@ -62,16 +65,43 @@ export default function AtBatView({
   }
 
   const handleEndAtBat = () => {
-    const nextInning = Math.min(atBat.currentInning + 1, INNINGS)
+    if (atBat.currentInning >= INNINGS) {
+      // Last inning — ask if game is over
+      setShowGameOver(true)
+      return
+    }
+    const nextInning = atBat.currentInning + 1
     updateAtBat({
       isAtBat: false,
       currentInning: nextInning,
     })
-    // Advance the field view to the next inning
     if (setViewingInning) {
       setViewingInning(nextInning)
     }
     onExitAtBat()
+  }
+
+  const handleGameOverNo = () => {
+    // Not over — continue to extra innings
+    const nextInning = atBat.currentInning + 1
+    updateAtBat({
+      isAtBat: false,
+      currentInning: nextInning,
+    })
+    setShowGameOver(false)
+    if (setViewingInning) {
+      setViewingInning(nextInning)
+    }
+    onExitAtBat()
+  }
+
+  const handleGameOverDone = ({ scoreUs, scoreThem, result }) => {
+    updateAtBat({
+      isAtBat: false,
+      currentInning: atBat.currentInning,
+    })
+    setShowGameOver(false)
+    if (onGameComplete) onGameComplete({ scoreUs, scoreThem, result })
   }
 
   // After last out is confirmed, show the "End At Bat" screen
@@ -137,7 +167,7 @@ export default function AtBatView({
             marginBottom: 12,
           }}
         >
-          End At Bat → {ordinalInning(nextInning)} Inning ▶
+          {atBat.currentInning >= INNINGS ? 'End At Bat → End Game?' : `End At Bat → ${ordinalInning(nextInning)} Inning ▶`}
         </button>
 
         {/* Option to pick a different player */}
@@ -324,6 +354,15 @@ export default function AtBatView({
           message={`Confirm: #${roster.find(p => p.id === selectedLastOut)?.jerseyNumber} ${roster.find(p => p.id === selectedLastOut)?.nickname || roster.find(p => p.id === selectedLastOut)?.name} made the last out?`}
           onConfirm={handlePinConfirm}
           onCancel={() => { setShowPin(false); setSelectedLastOut(null) }}
+        />
+      )}
+
+      {showGameOver && (
+        <GameOverModal
+          teamName={teamName}
+          opponent={opponent}
+          onNo={handleGameOverNo}
+          onDone={handleGameOverDone}
         />
       )}
     </div>

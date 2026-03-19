@@ -298,6 +298,7 @@ function App() {
             battingOrder={activeGame.battingOrder}
             updateBattingOrder={updateBattingOrder}
             isHome={activeGame.isHome}
+            onGameComplete={completeGame}
           />
         )
       case 'lineup':
