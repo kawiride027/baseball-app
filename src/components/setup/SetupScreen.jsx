@@ -236,24 +236,47 @@ export default function SetupScreen({ data, updateData }) {
           <input type="file" accept=".json,.csv,.txt" onChange={importSchedule} style={{ display: 'none' }} />
         </label>
       )}
-      {data.schedule.map((game) => (
-        <div key={game.id} style={rowStyle}>
-          <input
-            style={dateInputStyle}
-            type="date"
-            value={game.date}
-            onChange={(e) => updateGame(game.id, 'date', e.target.value)}
-          />
-          <input
-            style={nameInputStyle}
-            type="text"
-            placeholder="vs Opponent..."
-            value={game.opponent}
-            onChange={(e) => updateGame(game.id, 'opponent', e.target.value)}
-          />
-          <button style={removeBtn} onClick={() => removeGame(game.id)}>✕</button>
-        </div>
-      ))}
+      {data.schedule.map((game) => {
+        const gameData = data.games?.[game.id]
+        const isCompleted = gameData?.completed
+        const isCancelled = gameData?.cancelled
+        return (
+          <div key={game.id} style={{ marginBottom: 4 }}>
+            <div style={rowStyle}>
+              <input
+                style={dateInputStyle}
+                type="date"
+                value={game.date}
+                onChange={(e) => updateGame(game.id, 'date', e.target.value)}
+              />
+              <input
+                style={nameInputStyle}
+                type="text"
+                placeholder="vs Opponent..."
+                value={game.opponent}
+                onChange={(e) => updateGame(game.id, 'opponent', e.target.value)}
+              />
+              <button style={removeBtn} onClick={() => removeGame(game.id)}>✕</button>
+            </div>
+            {isCompleted && gameData.score && (
+              <div style={{
+                paddingLeft: 158,
+                fontSize: 14,
+                fontWeight: 900,
+                color: gameData.result === 'W' ? '#00C853' : gameData.result === 'L' ? '#FF1744' : '#FF9800',
+              }}>
+                {gameData.result === 'W' ? 'WIN' : gameData.result === 'L' ? 'LOSS' : 'TIE'}{' '}
+                {gameData.score.us}–{gameData.score.them}
+              </div>
+            )}
+            {isCancelled && (
+              <div style={{ paddingLeft: 158, fontSize: 14, fontWeight: 900, color: '#FF9800' }}>
+                CANCELLED
+              </div>
+            )}
+          </div>
+        )
+      })}
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button className="btn btn--accent btn--full" onClick={addGame} style={{ flex: 1 }}>
           + Add Game

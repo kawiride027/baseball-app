@@ -26,14 +26,25 @@ export function useAppData() {
       .then((r) => r.ok ? r.json() : null)
       .then((imported) => {
         if (!Array.isArray(imported) || imported.length === 0) return;
-        const newGames = imported.map((g, i) => ({
-          id: 'g' + (Date.now() + i) + Math.random().toString(36).slice(2, 6),
-          date: g.date || '',
-          opponent: g.opponent || '',
-        }));
+        const newGames = [];
+        const gameData = {};
+        imported.forEach((g, i) => {
+          const id = 'g' + (Date.now() + i) + Math.random().toString(36).slice(2, 6);
+          newGames.push({ id, date: g.date || '', opponent: g.opponent || '' });
+          if (g.result && g.scoreUs != null && g.scoreThem != null) {
+            gameData[id] = {
+              completed: true,
+              score: { us: g.scoreUs, them: g.scoreThem },
+              result: g.result,
+              assignments: {},
+              battingOrder: [],
+              atBat: { currentInning: 1, isAtBat: false, lastOutPlayerId: null, nextBatterIndex: 0 },
+            };
+          }
+        });
         setDataRaw((prev) => {
           if (prev.schedule.length > 0) return prev;
-          return { ...prev, schedule: newGames };
+          return { ...prev, schedule: newGames, games: { ...prev.games, ...gameData } };
         });
       })
       .catch(() => {});
