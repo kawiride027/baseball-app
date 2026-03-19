@@ -19,6 +19,7 @@ import DiamondSVG from './DiamondSVG'
 import BenchArea from './BenchArea'
 import PinModal from './PinModal'
 import AtBatView from './AtBatView'
+import GameOverModal from '../batting/GameOverModal'
 
 function SortableBatterRow({ player, idx }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -73,6 +74,8 @@ export default function FieldViewScreen({
   const [showEditBatOrderPin, setShowEditBatOrderPin] = useState(false)
   const [editingBatOrder, setEditingBatOrder] = useState(false)
   const [tempBatOrder, setTempBatOrder] = useState([])
+  const [showEndGamePin, setShowEndGamePin] = useState(false)
+  const [showGameOver, setShowGameOver] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -185,6 +188,39 @@ export default function FieldViewScreen({
     setEditingBatOrder(false)
     setTempBatOrder([])
   }
+
+  // End game flow (away team after fielding final inning)
+  const handleEndGameRequest = () => {
+    setShowEndGamePin(true)
+  }
+
+  const handleEndGamePinConfirm = () => {
+    setShowEndGamePin(false)
+    setShowGameOver(true)
+  }
+
+  const handleGameOverNo = () => {
+    // Not over — continue to extra innings
+    const nextInning = atBat.currentInning + 1
+    updateAtBat({
+      isAtBat: false,
+      currentInning: nextInning,
+      awaitingFinalFielding: false,
+    })
+    setShowGameOver(false)
+    setViewingInning(nextInning)
+  }
+
+  const handleGameOverDone = ({ scoreUs, scoreThem, result }) => {
+    updateAtBat({
+      isAtBat: false,
+      awaitingFinalFielding: false,
+    })
+    setShowGameOver(false)
+    if (onGameComplete) onGameComplete({ scoreUs, scoreThem, result })
+  }
+
+  const awaitingFinalFielding = !isHome && atBat.awaitingFinalFielding && viewingInning >= INNINGS
 
   const battingHalf = isHome ? 'Bottom' : 'Top'
   const fieldingHalf = isHome ? 'Top' : 'Bottom'
@@ -379,6 +415,41 @@ export default function FieldViewScreen({
         <BenchArea benchPlayerIds={currentAssignment.BENCH || []} roster={roster} unlocked={unlocked} />
       </DndContext>
 
+      {/* End Game button — shown for away team fielding the final inning */}
+      {awaitingFinalFielding && (
+        <div style={{ textAlign: 'center', marginTop: 12 }}>
+          <div style={{
+            padding: '10px 16px',
+            marginBottom: 10,
+            background: 'rgba(0,200,83,0.1)',
+            border: '2px solid #00C853',
+            borderRadius: 10,
+            fontSize: 14,
+            fontWeight: 700,
+            color: '#00C853',
+          }}>
+            Bottom of the {ordinalInning(viewingInning)} — We're fielding. When the inning ends:
+          </div>
+          <button
+            onClick={handleEndGameRequest}
+            style={{
+              width: '100%',
+              minHeight: 60,
+              fontSize: 22,
+              fontWeight: 900,
+              border: '3px solid #FFD700',
+              borderRadius: 12,
+              background: 'rgba(255,215,0,0.15)',
+              color: '#FFD700',
+              cursor: 'pointer',
+              padding: '14px',
+            }}
+          >
+            🏁 End Game
+          </button>
+        </div>
+      )}
+
       {/* Game info footer */}
       <div style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#555' }}>
         {teamName || 'Our Team'} vs {opponent || 'TBD'} · {isHome ? '🏠 HOME' : '🚌 AWAY'}
@@ -408,6 +479,25 @@ export default function FieldViewScreen({
           message="Enter coach PIN to edit batting order"
           onConfirm={handleEditBatOrderPinConfirm}
           onCancel={() => setShowEditBatOrderPin(false)}
+        />
+      )}
+
+      {/* End game PIN modal */}
+      {showEndGamePin && (
+        <PinModal
+          message="Enter coach PIN to end the game"
+          onConfirm={handleEndGamePinConfirm}
+          onCancel={() => setShowEndGamePin(false)}
+        />
+      )}
+
+      {/* Game over modal */}
+      {showGameOver && (
+        <GameOverModal
+          teamName={teamName}
+          opponent={opponent}
+          onNo={handleGameOverNo}
+          onDone={handleGameOverDone}
         />
       )}
     </div>

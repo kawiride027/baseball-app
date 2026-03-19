@@ -117,7 +117,7 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                       color: gameData.result === 'W' ? '#00C853' : gameData.result === 'L' ? '#FF1744' : '#FF9800',
                     }}>
                       {gameData.result === 'W' ? 'W' : gameData.result === 'L' ? 'L' : 'T'}{' '}
-                      {gameData.score.us}\u2013{gameData.score.them}
+                      {gameData.score.us}–{gameData.score.them}
                     </div>
                   )}
                   {homeAway && !isCompleted && !isCancelled && (

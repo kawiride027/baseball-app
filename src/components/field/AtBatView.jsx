@@ -66,7 +66,17 @@ export default function AtBatView({
 
   const handleEndAtBat = () => {
     if (atBat.currentInning >= INNINGS) {
-      // Last inning — ask if game is over
+      if (!isHome) {
+        // Away team: finished batting (top of last inning), still need to field (bottom)
+        // Go back to field view without advancing inning
+        updateAtBat({
+          isAtBat: false,
+          awaitingFinalFielding: true,
+        })
+        onExitAtBat()
+        return
+      }
+      // Home team: finished batting (bottom of last inning) — game is over
       setShowGameOver(true)
       return
     }
