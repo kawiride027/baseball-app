@@ -126,6 +126,37 @@ export default function TeamCodeScreen({ onTeamReady }) {
         >
           Join Existing Team
         </button>
+
+        <div style={{
+          marginTop: 48,
+          maxWidth: 340,
+          textAlign: 'center',
+          padding: '0 16px',
+        }}>
+          <div style={{
+            fontSize: 13,
+            color: '#666',
+            lineHeight: 1.6,
+            fontStyle: 'italic',
+          }}>
+            "I built this app as a coach to help keep sanity in the dugout. I hope you find it as helpful as I have for managing the younger kids. Enjoy!"
+          </div>
+          <div style={{
+            fontSize: 14,
+            color: '#FFD700',
+            fontWeight: 700,
+            marginTop: 10,
+          }}>
+            Play Ball! ⚾
+          </div>
+          <div style={{
+            fontSize: 13,
+            color: '#888',
+            marginTop: 4,
+          }}>
+            – Dustin Bradey
+          </div>
+        </div>
       </div>
     )
   }
