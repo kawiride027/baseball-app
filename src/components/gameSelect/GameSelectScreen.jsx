@@ -136,7 +136,7 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                     marginBottom: 4,
                   }}>
                     {formatDate(game.date)}
-                    {isToday && !isCancelled && ' \u2014 TODAY'}
+                    {isToday && !isCancelled && ' — TODAY'}
                   </div>
                   <div style={{
                     fontSize: 20,
@@ -161,12 +161,12 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                       color: gameData.result === 'W' ? '#00C853' : gameData.result === 'L' ? '#FF1744' : '#FF9800',
                     }}>
                       {gameData.result === 'W' ? 'WIN' : gameData.result === 'L' ? 'LOSS' : 'TIE'}{' '}
-                      {gameData.score.us}\u2013{gameData.score.them}
+                      {gameData.score.us}{'–'}{gameData.score.them}
                     </div>
                   )}
                   {homeAway && !isCompleted && !isCancelled && (
                     <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
-                      {homeAway === 'HOME' ? '\ud83c\udfe0' : '\ud83d\ude8c'} {homeAway}
+                      {homeAway === 'HOME' ? '🏠' : '🚌'} {homeAway}
                     </div>
                   )}
                 </div>
@@ -205,10 +205,10 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                     {isCompleted
                       ? (gameData.result === 'W' ? 'WIN' : gameData.result === 'L' ? 'LOSS' : 'TIE')
                       : isActive
-                      ? '\u26be LIVE'
+                      ? '⚾ LIVE'
                       : isNextGame
                       ? 'UP NEXT'
-                      : '\u2014'}
+                      : '—'}
                   </div>
                 )}
               </div>
@@ -250,7 +250,7 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                     marginBottom: 4,
                   }}>
                     {formatDate(game.date)}
-                    {isToday && !isCancelled && ' \u2014 TODAY'}
+                    {isToday && !isCancelled && ' — TODAY'}
                   </div>
                   <div style={{
                     fontSize: 20,
@@ -275,13 +275,13 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                       color: gameData.result === 'W' ? '#00C853' : gameData.result === 'L' ? '#FF1744' : '#FF9800',
                     }}>
                       {gameData.result === 'W' ? 'W' : gameData.result === 'L' ? 'L' : 'T'}{' '}
-                      {gameData.score.us}\u2013{gameData.score.them}
+                      {gameData.score.us}{'–'}{gameData.score.them}
                     </div>
                   )}
                   {homeAway && !isCompleted && !isCancelled && (
                     <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
-                      {homeAway === 'HOME' ? '\ud83c\udfe0' : '\ud83d\ude8c'} {homeAway}
-                      {isSetUp && ' \u00b7 \u2705 Lineup set'}
+                      {homeAway === 'HOME' ? '🏠' : '🚌'} {homeAway}
+                      {isSetUp && ' · ✅ Lineup set'}
                     </div>
                   )}
                 </div>
@@ -295,7 +295,7 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                     fontWeight: 900,
                     flexShrink: 0,
                   }}>
-                    {isCompleted ? 'DONE' : isActive ? 'ACTIVE' : isSetUp ? 'RESUME \u25b6' : 'SET UP \u25b6'}
+                    {isCompleted ? 'DONE' : isActive ? 'ACTIVE' : isSetUp ? 'RESUME ▶' : 'SET UP ▶'}
                   </div>
                 )}
               </button>
