@@ -53,9 +53,44 @@ src/
 - GitHub Pages via GitHub Actions (deploy workflow on main branch)
 - Base URL: `/baseball-app/`
 
+## Planned: Firebase Cloud Sync (Multi-Device)
+When ready, add real-time sync so multiple coaches can share the same team data.
+
+### What's needed
+1. **Firebase project** — create at console.firebase.google.com (free Spark plan)
+   - Enable Firestore Database
+   - Enable Anonymous Auth (or skip auth, use team codes only)
+   - Copy the Firebase config object (apiKey, projectId, etc.)
+2. **Install Firebase SDK** — `npm install firebase`
+3. **Replace localStorage with Firestore**
+   - Replace `useAppData()` in `src/hooks/useLocalStorage.js` with a Firestore-backed version
+   - Use `onSnapshot()` for real-time sync between devices
+   - Keep localStorage as offline fallback/cache
+4. **Add Team Code system**
+   - "Create Team" generates a unique code (e.g., `HAWKS-7X3K`)
+   - "Join Team" lets another device enter the code
+   - All team data stored under `teams/{teamCode}` in Firestore
+   - Coach PIN (999) still protects actions — no user accounts needed
+5. **Add landing screen** — first time: "Create Team" or "Join Team" before showing the main app
+
+### Architecture change
+```
+Current:  App → useAppData() → localStorage (single device)
+New:      App → useAppData() → Firestore (real-time sync) + localStorage (offline cache)
+```
+
+### Key files to modify
+- `src/hooks/useLocalStorage.js` → rename/rewrite to Firestore hook
+- `src/App.jsx` → add team code flow before main app renders
+- `vite.config.js` → no changes needed
+- New: `src/firebase.js` — Firebase config + initialization
+
 ## Recent Changes (latest first)
+- PIN-protected "Reset Game" button — erases all game data if coach selected wrong team
+- Wider field layout (620×400 viewBox) so all positions fit on iPad without scrolling
+- PIN-protected inning ◀/▶ arrows so kids can't accidentally change innings
 - Mid-game "Mark Absent" feature (PIN-protected) — removes player from batting order, field positions, and bench
-- Bigger field view: removed maxWidth cap, larger player chips (110×64), bigger fonts for sunlight readability
+- Bigger field view: larger player chips (110×64), bigger fonts for sunlight readability
 - Fixed away team game flow: after top of 6th → field view for bottom of 6th → End Game button
 - Fixed home team End Game button not clickable (GameOverModal was outside early return)
 - Fixed score display showing raw \u2013 escape instead of en-dash
