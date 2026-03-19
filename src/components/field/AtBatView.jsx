@@ -201,6 +201,16 @@ export default function AtBatView({
         >
           ← Wrong player? Go back
         </button>
+
+        {/* Game over modal (must be inside early return block to render) */}
+        {showGameOver && (
+          <GameOverModal
+            teamName={teamName}
+            opponent={opponent}
+            onNo={handleGameOverNo}
+            onDone={handleGameOverDone}
+          />
+        )}
       </div>
     )
   }
