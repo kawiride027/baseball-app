@@ -97,8 +97,21 @@ Firebase config uses environment variables (`.env` locally, GitHub Actions secre
 - Security rules: Test mode (expires ~30 days from 2026-03-19 setup)
 - First visit shows "Create Team" / "Join Team" screen
 
+## Parent Spectator Mode
+- Parents join via separate parent code (not the coach code) — read-only access
+- Parent code stored in `teams/{teamCode}.parentCode` + reverse-lookup at `parentCodes/{parentCode}`
+- Role stored in localStorage under key `baseball_app_role` ('coach' or 'parent')
+- `useAppData(role)` returns no-op `updateData` for parents (no Firestore writes)
+- Parents see: Field Positions, Batting Order, History tabs only
+- All coach-only UI hidden: Unlock, Start At Bat, Edit Lineup, Mark Absent, Reset, End Game
+- Inning browsing for parents uses local state (no PIN, no Firestore write)
+- LIVE indicator banner on parent field view
+- Coach sees both codes in team info dropdown (coach code + parent code)
+- Existing teams without parentCode get "Generate Parent Code" button
+
 ## Recent Changes (latest first)
-- Firebase Cloud Sync: Firestore real-time sync, team codes, TeamCodeScreen, offline persistence (code ready, not deployed)
+- Parent Spectator Mode: separate parent code for read-only real-time viewing (field positions, batting order, history)
+- Firebase Cloud Sync: Firestore real-time sync, team codes, TeamCodeScreen, offline persistence
 - PIN-protected "Reset Game" button — erases all game data if coach selected wrong team
 - Wider field layout (620×400 viewBox) so all positions fit on iPad without scrolling
 - PIN-protected inning ◀/▶ arrows so kids can't accidentally change innings
