@@ -65,6 +65,9 @@ export default function FieldViewScreen({
   updateBattingOrder,
   isHome,
   onGameComplete,
+  absentIds,
+  markPlayerAbsent,
+  unmarkPlayerAbsent,
 }) {
   // Unlock/lock mode: false = locked (kids view), true = coach is editing
   const [unlocked, setUnlocked] = useState(false)
@@ -76,6 +79,10 @@ export default function FieldViewScreen({
   const [tempBatOrder, setTempBatOrder] = useState([])
   const [showEndGamePin, setShowEndGamePin] = useState(false)
   const [showGameOver, setShowGameOver] = useState(false)
+  const [showMarkAbsentPin, setShowMarkAbsentPin] = useState(false)
+  const [showAbsentPicker, setShowAbsentPicker] = useState(false)
+  const [showUnmarkAbsentPin, setShowUnmarkAbsentPin] = useState(false)
+  const [pendingUnmarkId, setPendingUnmarkId] = useState(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -220,6 +227,19 @@ export default function FieldViewScreen({
     if (onGameComplete) onGameComplete({ scoreUs, scoreThem, result })
   }
 
+  // --- Mark Absent flow ---
+  const handleMarkAbsentRequest = () => setShowMarkAbsentPin(true)
+  const handleMarkAbsentPinConfirm = () => { setShowMarkAbsentPin(false); setShowAbsentPicker(true) }
+  const handlePickAbsent = (playerId) => markPlayerAbsent(playerId)
+  const handleCloseAbsentPicker = () => setShowAbsentPicker(false)
+
+  // --- Unmark Absent flow ---
+  const handleUnmarkAbsentRequest = (playerId) => { setPendingUnmarkId(playerId); setShowUnmarkAbsentPin(true) }
+  const handleUnmarkAbsentPinConfirm = () => {
+    setShowUnmarkAbsentPin(false)
+    if (pendingUnmarkId) { unmarkPlayerAbsent(pendingUnmarkId); setPendingUnmarkId(null) }
+  }
+
   const awaitingFinalFielding = !isHome && atBat.awaitingFinalFielding && viewingInning >= INNINGS
 
   const battingHalf = isHome ? 'Bottom' : 'Top'
@@ -350,6 +370,14 @@ export default function FieldViewScreen({
         >
           📋 Edit Lineup
         </button>
+
+        <button
+          className="btn btn--small"
+          onClick={handleMarkAbsentRequest}
+          style={{ fontSize: 13, borderColor: '#FF1744', color: '#FF1744' }}
+        >
+          ❌ Mark Absent
+        </button>
       </div>
 
       {/* Next 3 batters bar */}
@@ -414,6 +442,52 @@ export default function FieldViewScreen({
         <DiamondSVG roster={roster} assignment={currentAssignment} unlocked={unlocked} />
         <BenchArea benchPlayerIds={currentAssignment.BENCH || []} roster={roster} unlocked={unlocked} />
       </DndContext>
+
+      {/* Absent players section */}
+      {absentIds && absentIds.length > 0 && (
+        <div style={{
+          marginTop: 12,
+          padding: 10,
+          background: 'rgba(255,23,68,0.05)',
+          borderRadius: 10,
+          border: '1px solid #333',
+        }}>
+          <div style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: '#FF1744',
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+            marginBottom: 6,
+          }}>
+            Absent ({absentIds.length})
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {absentIds.map((pid) => {
+              const p = roster.find((r) => r.id === pid)
+              if (!p) return null
+              return (
+                <button
+                  key={pid}
+                  onClick={() => handleUnmarkAbsentRequest(pid)}
+                  style={{
+                    padding: '6px 10px',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    background: '#2A2A2A',
+                    color: '#FF9800',
+                    border: '1px solid #555',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                  }}
+                >
+                  #{p.jerseyNumber} {(p.nickname || p.name).split(' ')[0]} ↩
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* End Game button — shown for away team fielding the final inning */}
       {awaitingFinalFielding && (
@@ -498,6 +572,100 @@ export default function FieldViewScreen({
           opponent={opponent}
           onNo={handleGameOverNo}
           onDone={handleGameOverDone}
+        />
+      )}
+
+      {/* Absent picker modal */}
+      {showAbsentPicker && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 20,
+        }}>
+          <div style={{
+            background: '#1e1e1e',
+            border: '2px solid #FF1744',
+            borderRadius: 12,
+            padding: 20,
+            width: '100%',
+            maxWidth: 360,
+            maxHeight: '80vh',
+            overflowY: 'auto',
+          }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#FF1744', textAlign: 'center', marginBottom: 4 }}>
+              Mark Player Absent
+            </div>
+            <div style={{ fontSize: 13, color: '#888', textAlign: 'center', marginBottom: 16 }}>
+              Tap a player to mark them absent
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {roster
+                .filter((p) => !(absentIds || []).includes(p.id))
+                .map((player) => (
+                  <button
+                    key={player.id}
+                    onClick={() => handlePickAbsent(player.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '12px 14px',
+                      background: '#252525',
+                      border: '2px solid #444',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      color: '#FFF',
+                      fontSize: 16,
+                      fontWeight: 700,
+                    }}
+                  >
+                    <span style={{ color: '#FFD700', fontSize: 14 }}>#{player.jerseyNumber}</span>
+                    <span>{player.nickname || player.name}</span>
+                  </button>
+                ))}
+            </div>
+            <button
+              onClick={handleCloseAbsentPicker}
+              style={{
+                width: '100%',
+                marginTop: 16,
+                minHeight: 48,
+                fontSize: 16,
+                fontWeight: 700,
+                border: '2px solid #555',
+                borderRadius: 8,
+                background: '#2A2A2A',
+                color: '#FFF',
+                cursor: 'pointer',
+              }}
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mark absent PIN modal */}
+      {showMarkAbsentPin && (
+        <PinModal
+          message="Enter coach PIN to mark a player absent"
+          onConfirm={handleMarkAbsentPinConfirm}
+          onCancel={() => setShowMarkAbsentPin(false)}
+        />
+      )}
+
+      {/* Unmark absent PIN modal */}
+      {showUnmarkAbsentPin && (
+        <PinModal
+          message="Enter coach PIN to bring player back"
+          onConfirm={handleUnmarkAbsentPinConfirm}
+          onCancel={() => { setShowUnmarkAbsentPin(false); setPendingUnmarkId(null) }}
         />
       )}
     </div>

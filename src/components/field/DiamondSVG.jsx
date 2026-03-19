@@ -5,8 +5,8 @@ import PlayerChip from './PlayerChip'
 function DroppableSlot({ position, player, unlocked }) {
   const { setNodeRef, isOver: slotIsOver } = useDroppable({ id: position, data: { position }, disabled: !unlocked })
   const coords = POSITION_COORDS[position]
-  const chipWidth = 90
-  const chipHeight = 56
+  const chipWidth = 110
+  const chipHeight = 64
 
   return (
     <foreignObject
@@ -32,13 +32,13 @@ function DroppableSlot({ position, player, unlocked }) {
           transition: 'all 0.15s',
         }}
       >
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#00E5FF', textAlign: 'center', lineHeight: 1 }}>
+        <div style={{ fontSize: 12, fontWeight: 900, color: '#00E5FF', textAlign: 'center', lineHeight: 1 }}>
           {position}
         </div>
         {player ? (
           <PlayerChip player={player} position={position} unlocked={unlocked} />
         ) : (
-          <div style={{ fontSize: 10, color: '#666', textAlign: 'center' }}>empty</div>
+          <div style={{ fontSize: 12, color: '#666', textAlign: 'center' }}>empty</div>
         )}
       </div>
     </foreignObject>
@@ -47,7 +47,7 @@ function DroppableSlot({ position, player, unlocked }) {
 
 export default function DiamondSVG({ roster, assignment, unlocked }) {
   return (
-    <svg viewBox="0 0 500 480" style={{ width: '100%', maxWidth: 600, display: 'block', margin: '0 auto' }}>
+    <svg viewBox="0 0 500 480" style={{ width: '100%', display: 'block', margin: '0 auto' }}>
       {/* Grass background */}
       <rect x="0" y="0" width="500" height="480" rx="16" fill="#1a472a" />
 

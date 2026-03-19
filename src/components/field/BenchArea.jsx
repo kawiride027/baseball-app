@@ -12,11 +12,11 @@ function BenchPlayer({ player, unlocked }) {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
-    padding: '8px 14px',
+    padding: '10px 16px',
     background: '#333',
     borderRadius: 8,
     border: '2px solid #555',
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: 700,
     color: '#FFF',
     cursor: unlocked ? 'grab' : 'default',
@@ -27,7 +27,7 @@ function BenchPlayer({ player, unlocked }) {
 
   return (
     <div ref={setNodeRef} style={style} {...(unlocked ? listeners : {})} {...attributes}>
-      <span style={{ color: '#FFD700', fontSize: 13 }}>#{player.jerseyNumber}</span>
+      <span style={{ color: '#FFD700', fontSize: 15, fontWeight: 900 }}>#{player.jerseyNumber}</span>
       {player.nickname || player.name}
     </div>
   )

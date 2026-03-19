@@ -105,6 +105,7 @@ function App() {
           },
           isHome: isHome,
           setupComplete: false,
+          absentIds: [],
         },
       },
     }))
@@ -195,6 +196,95 @@ function App() {
         },
       },
     }))
+  }
+
+  const markPlayerAbsent = (playerId) => {
+    if (!data.activeGameId) return
+    updateData((prev) => {
+      const game = prev.games[prev.activeGameId]
+      const currentInning = game.atBat.currentInning
+
+      // --- Batting order adjustment ---
+      const oldOrder = game.battingOrder
+      const oldNextIdx = game.atBat.nextBatterIndex || 0
+      const currentNextBatterId = oldOrder[oldNextIdx]
+      const newOrder = oldOrder.filter((id) => id !== playerId)
+
+      let newNextIdx
+      if (playerId === currentNextBatterId) {
+        // Absent player WAS the next batter — keep same index (now points to next person)
+        newNextIdx = oldNextIdx >= newOrder.length ? 0 : oldNextIdx
+      } else {
+        newNextIdx = newOrder.indexOf(currentNextBatterId)
+        if (newNextIdx === -1) newNextIdx = 0
+      }
+
+      // --- Remove from field positions + bench for current + future innings ---
+      const newAssignments = { ...game.assignments }
+      for (let i = currentInning; i <= INNINGS; i++) {
+        const key = String(i)
+        if (!newAssignments[key]) continue
+        const inning = { ...newAssignments[key] }
+        POSITIONS.forEach((pos) => {
+          if (inning[pos] === playerId) inning[pos] = null
+        })
+        if (inning.BENCH) {
+          inning.BENCH = inning.BENCH.filter((id) => id !== playerId)
+        }
+        newAssignments[key] = inning
+      }
+
+      return {
+        ...prev,
+        games: {
+          ...prev.games,
+          [prev.activeGameId]: {
+            ...game,
+            battingOrder: newOrder,
+            assignments: newAssignments,
+            absentIds: [...(game.absentIds || []), playerId],
+            atBat: { ...game.atBat, nextBatterIndex: newNextIdx },
+          },
+        },
+      }
+    })
+  }
+
+  const unmarkPlayerAbsent = (playerId) => {
+    if (!data.activeGameId) return
+    updateData((prev) => {
+      const game = prev.games[prev.activeGameId]
+      const currentInning = game.atBat.currentInning
+
+      // Add back to end of batting order
+      const newOrder = [...game.battingOrder, playerId]
+
+      // Add to BENCH for current + future innings
+      const newAssignments = { ...game.assignments }
+      for (let i = currentInning; i <= INNINGS; i++) {
+        const key = String(i)
+        if (!newAssignments[key]) continue
+        const inning = { ...newAssignments[key] }
+        if (!inning.BENCH) inning.BENCH = []
+        if (!inning.BENCH.includes(playerId)) {
+          inning.BENCH = [...inning.BENCH, playerId]
+        }
+        newAssignments[key] = inning
+      }
+
+      return {
+        ...prev,
+        games: {
+          ...prev.games,
+          [prev.activeGameId]: {
+            ...game,
+            battingOrder: newOrder,
+            assignments: newAssignments,
+            absentIds: (game.absentIds || []).filter((id) => id !== playerId),
+          },
+        },
+      }
+    })
   }
 
   const setViewingInning = (inning) => {
@@ -299,6 +389,9 @@ function App() {
             updateBattingOrder={updateBattingOrder}
             isHome={activeGame.isHome}
             onGameComplete={completeGame}
+            absentIds={activeGame.absentIds || []}
+            markPlayerAbsent={markPlayerAbsent}
+            unmarkPlayerAbsent={unmarkPlayerAbsent}
           />
         )
       case 'lineup':

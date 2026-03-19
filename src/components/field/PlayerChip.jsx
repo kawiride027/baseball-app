@@ -10,7 +10,7 @@ export default function PlayerChip({ player, position, unlocked }) {
   const displayName = player.nickname || player.name.split(' ')[0]
 
   const style = {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 900,
     color: '#FFFFFF',
     textAlign: 'center',
@@ -26,12 +26,12 @@ export default function PlayerChip({ player, position, unlocked }) {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     maxWidth: '100%',
-    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+    textShadow: '0 1px 4px rgba(0,0,0,1)',
   }
 
   return (
     <div ref={setNodeRef} style={style} {...(unlocked ? listeners : {})} {...attributes}>
-      <div style={{ color: '#FFD700', fontSize: 11, fontWeight: 700 }}>#{player.jerseyNumber}</div>
+      <div style={{ color: '#FFD700', fontSize: 14, fontWeight: 900 }}>#{player.jerseyNumber}</div>
       <div>{displayName}</div>
     </div>
   )
