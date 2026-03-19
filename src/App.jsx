@@ -17,7 +17,7 @@ import './App.css'
 
 const ALL_TABS = [
   { id: 'setup', label: 'Team Setup', coachOnly: true },
-  { id: 'game', label: "Today's Game", coachOnly: true },
+  { id: 'game', label: "Today's Game", parentLabel: 'Schedule', coachOnly: false },
   { id: 'field', label: 'Field Positions', coachOnly: false },
   { id: 'batting', label: 'Batting Order', coachOnly: false },
   { id: 'lineup', label: 'Team Summary', coachOnly: true },
@@ -51,7 +51,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
   const isParent = role === ROLES.PARENT
   const [data, updateData, undo, canUndo] = useAppData(role)
   const TABS = isParent ? ALL_TABS.filter(t => !t.coachOnly) : ALL_TABS
-  const [currentTab, setCurrentTab] = useState(isParent ? 'field' : 'setup')
+  const [currentTab, setCurrentTab] = useState(isParent ? 'game' : 'setup')
 
   // New game setup flow states
   const [showHomeAwayPicker, setShowHomeAwayPicker] = useState(false)
@@ -385,6 +385,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
             activeGameId={data.activeGameId}
             games={data.games}
             onSelectGame={selectGame}
+            isParent={isParent}
             onCancelGame={(gameId, cancelled) => {
               updateData((prev) => ({
                 ...prev,
@@ -397,6 +398,18 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
                   },
                 },
               }))
+            }}
+            onResetGame={(gameId) => {
+              updateData((prev) => {
+                const newGames = { ...prev.games }
+                delete newGames[gameId]
+                return {
+                  ...prev,
+                  activeGameId: prev.activeGameId === gameId ? null : prev.activeGameId,
+                  viewingInning: prev.activeGameId === gameId ? 1 : prev.viewingInning,
+                  games: newGames,
+                }
+              })
             }}
           />
         )
@@ -648,7 +661,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
             onClick={() => handleTabClick(tab.id)}
             style={(showPreGameWizard || showBattingOrderSetup) ? { opacity: 0.3, pointerEvents: 'none' } : {}}
           >
-            {tab.label}
+            {isParent && tab.parentLabel ? tab.parentLabel : tab.label}
           </button>
         ))}
       </nav>
