@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAppData } from './hooks/useLocalStorage'
+import { useAppData, getStoredTeamCode, clearStoredTeamCode } from './hooks/useLocalStorage'
 import { POSITIONS, INNINGS } from './constants'
+import TeamCodeScreen from './components/TeamCodeScreen'
 import SetupScreen from './components/setup/SetupScreen'
 import GameSelectScreen from './components/gameSelect/GameSelectScreen'
 import FieldViewScreen from './components/field/FieldViewScreen'
@@ -22,6 +23,25 @@ const TABS = [
 ]
 
 function App() {
+  const [teamCode, setTeamCode] = useState(getStoredTeamCode)
+
+  // If no team code yet, show create/join screen
+  if (!teamCode) {
+    return <TeamCodeScreen onTeamReady={(code) => {
+      setTeamCode(code)
+      // Force re-mount by reloading — ensures useAppData picks up new team code
+      window.location.reload()
+    }} />
+  }
+
+  return <MainApp teamCode={teamCode} onLeaveTeam={() => {
+    clearStoredTeamCode()
+    localStorage.removeItem('baseball_app_data')
+    setTeamCode(null)
+  }} />
+}
+
+function MainApp({ teamCode, onLeaveTeam }) {
   const [data, updateData, undo, canUndo] = useAppData()
   const [currentTab, setCurrentTab] = useState('setup')
 
@@ -467,8 +487,76 @@ function App() {
     }
   }
 
+  const [showTeamInfo, setShowTeamInfo] = useState(false)
+
   return (
     <div className="app">
+      {/* Team code bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 12px',
+        background: '#0a0a0a',
+        borderBottom: '1px solid #222',
+        fontSize: 12,
+      }}>
+        <span style={{ color: '#888' }}>
+          {data.teamName || 'My Team'}
+        </span>
+        <button
+          onClick={() => setShowTeamInfo(!showTeamInfo)}
+          style={{
+            background: 'transparent',
+            border: '1px solid #444',
+            borderRadius: 4,
+            color: '#FFD700',
+            fontSize: 11,
+            fontWeight: 700,
+            padding: '3px 8px',
+            cursor: 'pointer',
+            letterSpacing: 1,
+          }}
+        >
+          Code: {teamCode}
+        </button>
+      </div>
+
+      {/* Team info dropdown */}
+      {showTeamInfo && (
+        <div style={{
+          padding: '12px 16px',
+          background: '#1a1a1a',
+          borderBottom: '1px solid #333',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 14, color: '#888', marginBottom: 4 }}>
+            Share this code so others can join your team:
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: '#FFD700', letterSpacing: 3, marginBottom: 12 }}>
+            {teamCode}
+          </div>
+          <button
+            onClick={() => {
+              if (window.confirm('Leave this team? You can rejoin later with the team code.')) {
+                onLeaveTeam()
+              }
+            }}
+            style={{
+              fontSize: 12,
+              color: '#FF1744',
+              background: 'transparent',
+              border: '1px solid #FF1744',
+              borderRadius: 6,
+              padding: '6px 14px',
+              cursor: 'pointer',
+            }}
+          >
+            Leave Team
+          </button>
+        </div>
+      )}
+
       <nav className="nav">
         {TABS.map((tab) => (
           <button

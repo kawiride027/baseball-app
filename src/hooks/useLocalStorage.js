@@ -1,9 +1,38 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { STORAGE_KEY, DEFAULT_DATA } from '../constants';
 
 const MAX_UNDO_STACK = 30;
+const TEAM_CODE_KEY = 'baseball_team_code';
+
+// Generate a random team code like "HAWKS-7X3K"
+export function generateTeamCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code.slice(0, 4) + '-' + code.slice(4);
+}
+
+// Get/set team code from localStorage
+export function getStoredTeamCode() {
+  return localStorage.getItem(TEAM_CODE_KEY) || null;
+}
+
+export function setStoredTeamCode(code) {
+  localStorage.setItem(TEAM_CODE_KEY, code);
+}
+
+export function clearStoredTeamCode() {
+  localStorage.removeItem(TEAM_CODE_KEY);
+}
 
 export function useAppData() {
+  const teamCode = getStoredTeamCode();
+
+  // Initialize from localStorage cache (fast first paint)
   const [data, setDataRaw] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -52,19 +81,57 @@ export function useAppData() {
 
   const [undoStack, setUndoStack] = useState([]);
   const skipUndo = useRef(false);
+  const isRemoteUpdate = useRef(false);
 
+  // --- Firestore real-time sync ---
+  useEffect(() => {
+    if (!teamCode) return;
+
+    const docRef = doc(db, 'teams', teamCode);
+    const unsubscribe = onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const remoteData = snapshot.data();
+        // Only update if the remote data is different (avoid loops)
+        isRemoteUpdate.current = true;
+        setDataRaw((prev) => {
+          const merged = { ...DEFAULT_DATA, ...remoteData };
+          // Check if data actually changed to avoid unnecessary re-renders
+          if (JSON.stringify(prev) === JSON.stringify(merged)) return prev;
+          return merged;
+        });
+      }
+    }, (error) => {
+      console.warn('Firestore sync error (working offline):', error.message);
+    });
+
+    return () => unsubscribe();
+  }, [teamCode]);
+
+  // --- Save to localStorage + Firestore on every change ---
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
       console.error('Failed to save to localStorage:', e);
     }
-  }, [data]);
+
+    // Push to Firestore (skip if this change came from Firestore)
+    if (isRemoteUpdate.current) {
+      isRemoteUpdate.current = false;
+      return;
+    }
+
+    if (teamCode) {
+      const docRef = doc(db, 'teams', teamCode);
+      setDoc(docRef, data, { merge: true }).catch((err) => {
+        console.warn('Firestore write failed (offline, will sync later):', err.message);
+      });
+    }
+  }, [data, teamCode]);
 
   const updateData = useCallback((updater) => {
     setDataRaw((prev) => {
       const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
-      // Push previous state onto undo stack (unless we're undoing)
       if (!skipUndo.current) {
         setUndoStack((stack) => {
           const newStack = [...stack, prev];
