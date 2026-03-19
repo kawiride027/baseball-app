@@ -91,13 +91,11 @@ App() → checks for team code in localStorage
 - GitHub Pages via GitHub Actions (deploy workflow on main branch)
 - Base URL: `/baseball-app/`
 
-## Status: Firebase Sync READY but NOT YET DEPLOYED
-All Firebase code is written, config is plugged in, build passes. **NOT committed/pushed yet** — user wants to deploy after game day (2026-03-19). When ready:
-1. `git add` all changed files
-2. `git commit` with Firebase sync message
-3. `git push` → GitHub Actions deploys to Pages
-4. First visit will show "Create Team" / "Join Team" screen
-5. Existing localStorage data will need to be uploaded to the new Firestore team doc on first create
+## Status: Firebase Sync DEPLOYED
+Firebase config uses environment variables (`.env` locally, GitHub Actions secrets for deployment).
+- Firebase project: `baseball-app-2625c` (Firestore location: Los Angeles, Spark free plan)
+- Security rules: Test mode (expires ~30 days from 2026-03-19 setup)
+- First visit shows "Create Team" / "Join Team" screen
 
 ## Recent Changes (latest first)
 - Firebase Cloud Sync: Firestore real-time sync, team codes, TeamCodeScreen, offline persistence (code ready, not deployed)
