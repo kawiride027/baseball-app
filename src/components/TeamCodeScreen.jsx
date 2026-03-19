@@ -20,10 +20,19 @@ export default function TeamCodeScreen({ onTeamReady }) {
     setError('')
     try {
       const code = generateTeamCode()
-      const initialData = { ...DEFAULT_DATA, teamName: teamName.trim() }
+      // Check for existing localStorage data to migrate
+      let existingData = null
+      try {
+        const stored = localStorage.getItem('baseball_app_data')
+        if (stored) existingData = JSON.parse(stored)
+      } catch (e) { /* ignore parse errors */ }
+
+      const initialData = existingData
+        ? { ...DEFAULT_DATA, ...existingData, teamName: teamName.trim() }
+        : { ...DEFAULT_DATA, teamName: teamName.trim() }
+
       await setDoc(doc(db, 'teams', code), initialData)
       setStoredTeamCode(code)
-      // Also seed localStorage so the app picks it up immediately
       localStorage.setItem('baseball_app_data', JSON.stringify(initialData))
       onTeamReady(code)
     } catch (err) {
