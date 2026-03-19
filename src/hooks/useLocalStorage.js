@@ -16,6 +16,29 @@ export function useAppData() {
     return { ...DEFAULT_DATA };
   });
 
+  // Auto-load schedule.json on first run if no schedule exists
+  const scheduleLoaded = useRef(false);
+  useEffect(() => {
+    if (scheduleLoaded.current) return;
+    scheduleLoaded.current = true;
+    if (data.schedule.length > 0) return;
+    fetch(import.meta.env.BASE_URL + 'schedule.json')
+      .then((r) => r.ok ? r.json() : null)
+      .then((imported) => {
+        if (!Array.isArray(imported) || imported.length === 0) return;
+        const newGames = imported.map((g, i) => ({
+          id: 'g' + (Date.now() + i) + Math.random().toString(36).slice(2, 6),
+          date: g.date || '',
+          opponent: g.opponent || '',
+        }));
+        setDataRaw((prev) => {
+          if (prev.schedule.length > 0) return prev;
+          return { ...prev, schedule: newGames };
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   const [undoStack, setUndoStack] = useState([]);
   const skipUndo = useRef(false);
 

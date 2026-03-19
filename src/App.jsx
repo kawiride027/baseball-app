@@ -256,6 +256,19 @@ function App() {
             activeGameId={data.activeGameId}
             games={data.games}
             onSelectGame={selectGame}
+            onCancelGame={(gameId, cancelled) => {
+              updateData((prev) => ({
+                ...prev,
+                activeGameId: cancelled && prev.activeGameId === gameId ? null : prev.activeGameId,
+                games: {
+                  ...prev.games,
+                  [gameId]: {
+                    ...(prev.games[gameId] || {}),
+                    cancelled,
+                  },
+                },
+              }))
+            }}
           />
         )
       case 'field':

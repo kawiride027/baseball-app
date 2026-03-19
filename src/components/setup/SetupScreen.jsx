@@ -57,16 +57,44 @@ export default function SetupScreen({ data, updateData }) {
     }))
   }
 
+  const parseCSV = (text) => {
+    const lines = text.trim().split('\n').map((l) => l.trim()).filter(Boolean)
+    if (lines.length === 0) return null
+    // Check if first line is a header
+    const first = lines[0].toLowerCase()
+    const startIdx = (first.includes('date') || first.includes('opponent')) ? 1 : 0
+    const games = []
+    for (let i = startIdx; i < lines.length; i++) {
+      // Split on comma, but respect quotes
+      const parts = lines[i].match(/(".*?"|[^,]+)/g)?.map((s) => s.replace(/^"|"$/g, '').trim()) || []
+      if (parts.length >= 2) {
+        games.push({ date: parts[0], opponent: parts[1] })
+      }
+    }
+    return games.length > 0 ? games : null
+  }
+
   const importSchedule = (e) => {
     const file = e.target.files[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
       try {
-        const imported = JSON.parse(ev.target.result)
-        if (!Array.isArray(imported)) {
-          alert('Invalid schedule file: expected an array of games')
-          return
+        const text = ev.target.result
+        let imported
+        // Try JSON first, then CSV
+        try {
+          imported = JSON.parse(text)
+          if (!Array.isArray(imported)) {
+            alert('Invalid JSON: expected an array of games')
+            return
+          }
+        } catch {
+          imported = parseCSV(text)
+          if (!imported) {
+            alert('Could not parse file. Use CSV (date,opponent per line) or JSON.')
+            return
+          }
         }
         if (data.schedule.length > 0) {
           if (!confirm(`Replace ${data.schedule.length} existing games with ${imported.length} imported games?`)) {
@@ -83,7 +111,7 @@ export default function SetupScreen({ data, updateData }) {
           schedule: newGames,
         }))
       } catch (err) {
-        alert('Invalid schedule file')
+        alert('Could not parse file')
       }
     }
     reader.readAsText(file)
@@ -204,8 +232,8 @@ export default function SetupScreen({ data, updateData }) {
       <div className="section-title">Game Schedule ({data.schedule.length} games)</div>
       {data.schedule.length === 0 && (
         <label className="btn btn--accent btn--full" style={{ cursor: 'pointer', textAlign: 'center', marginBottom: 12, fontSize: 16 }}>
-          Import Season Schedule (.json)
-          <input type="file" accept=".json" onChange={importSchedule} style={{ display: 'none' }} />
+          Import Season Game Schedule
+          <input type="file" accept=".json,.csv,.txt" onChange={importSchedule} style={{ display: 'none' }} />
         </label>
       )}
       {data.schedule.map((game) => (
@@ -231,8 +259,8 @@ export default function SetupScreen({ data, updateData }) {
           + Add Game
         </button>
         <label className="btn btn--full" style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}>
-          Import Schedule
-          <input type="file" accept=".json" onChange={importSchedule} style={{ display: 'none' }} />
+          Import Season Game Schedule
+          <input type="file" accept=".json,.csv,.txt" onChange={importSchedule} style={{ display: 'none' }} />
         </label>
       </div>
 
