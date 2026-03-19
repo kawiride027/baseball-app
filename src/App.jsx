@@ -287,6 +287,17 @@ function App() {
     })
   }
 
+  const resetGame = () => {
+    if (!data.activeGameId) return
+    const gameId = data.activeGameId
+    updateData((prev) => {
+      const newGames = { ...prev.games }
+      delete newGames[gameId]
+      return { ...prev, activeGameId: null, viewingInning: 1, games: newGames }
+    })
+    setCurrentTab('game')
+  }
+
   const setViewingInning = (inning) => {
     updateData((prev) => ({ ...prev, viewingInning: inning }))
   }
@@ -392,6 +403,7 @@ function App() {
             absentIds={activeGame.absentIds || []}
             markPlayerAbsent={markPlayerAbsent}
             unmarkPlayerAbsent={unmarkPlayerAbsent}
+            resetGame={resetGame}
           />
         )
       case 'lineup':

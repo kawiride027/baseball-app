@@ -68,6 +68,7 @@ export default function FieldViewScreen({
   absentIds,
   markPlayerAbsent,
   unmarkPlayerAbsent,
+  resetGame,
 }) {
   // Unlock/lock mode: false = locked (kids view), true = coach is editing
   const [unlocked, setUnlocked] = useState(false)
@@ -81,6 +82,8 @@ export default function FieldViewScreen({
   const [showGameOver, setShowGameOver] = useState(false)
   const [showInningPin, setShowInningPin] = useState(false)
   const [pendingInning, setPendingInning] = useState(null)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [showResetPin, setShowResetPin] = useState(false)
   const [showMarkAbsentPin, setShowMarkAbsentPin] = useState(false)
   const [showAbsentPicker, setShowAbsentPicker] = useState(false)
   const [showUnmarkAbsentPin, setShowUnmarkAbsentPin] = useState(false)
@@ -238,6 +241,11 @@ export default function FieldViewScreen({
     setShowInningPin(false)
     if (pendingInning != null) { setViewingInning(pendingInning); setPendingInning(null) }
   }
+
+  // --- Reset Game flow ---
+  const handleResetRequest = () => setShowResetConfirm(true)
+  const handleResetConfirmYes = () => { setShowResetConfirm(false); setShowResetPin(true) }
+  const handleResetPinConfirm = () => { setShowResetPin(false); resetGame() }
 
   // --- Mark Absent flow ---
   const handleMarkAbsentRequest = () => setShowMarkAbsentPin(true)
@@ -540,6 +548,23 @@ export default function FieldViewScreen({
       <div style={{ textAlign: 'center', marginTop: 8, fontSize: 13, color: '#555' }}>
         {teamName || 'Our Team'} vs {opponent || 'TBD'} · {isHome ? '🏠 HOME' : '🚌 AWAY'}
       </div>
+      <div style={{ textAlign: 'center', marginTop: 12 }}>
+        <button
+          onClick={handleResetRequest}
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: '#666',
+            background: 'transparent',
+            border: '1px solid #444',
+            borderRadius: 6,
+            padding: '6px 14px',
+            cursor: 'pointer',
+          }}
+        >
+          Reset Game (wrong team?)
+        </button>
+      </div>
 
       {/* Unlock PIN modal */}
       {showUnlockPin && (
@@ -661,6 +686,68 @@ export default function FieldViewScreen({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Reset game confirmation */}
+      {showResetConfirm && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: 20,
+        }}>
+          <div style={{
+            background: '#1e1e1e',
+            border: '2px solid #FF1744',
+            borderRadius: 12,
+            padding: 24,
+            width: '100%',
+            maxWidth: 340,
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#FF1744', marginBottom: 8 }}>
+              Reset This Game?
+            </div>
+            <div style={{ fontSize: 14, color: '#aaa', marginBottom: 20, lineHeight: 1.4 }}>
+              This will erase all lineup, positions, and batting data for this game. The game will go back to "not started" on the schedule.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                style={{
+                  flex: 1, minHeight: 48, fontSize: 15, fontWeight: 700,
+                  border: '2px solid #555', borderRadius: 10,
+                  background: '#2A2A2A', color: '#888', cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetConfirmYes}
+                style={{
+                  flex: 1, minHeight: 48, fontSize: 15, fontWeight: 900,
+                  border: '2px solid #FF1744', borderRadius: 10,
+                  background: 'rgba(255,23,68,0.15)', color: '#FF1744', cursor: 'pointer',
+                }}
+              >
+                Yes, Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset game PIN modal */}
+      {showResetPin && (
+        <PinModal
+          message="Enter coach PIN to reset this game"
+          onConfirm={handleResetPinConfirm}
+          onCancel={() => setShowResetPin(false)}
+        />
       )}
 
       {/* Inning change PIN modal */}
