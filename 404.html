@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // Redirect all 404s to index.html for SPA routing on GitHub Pages
+      // This also handles stale cached asset URLs after deploys
+      sessionStorage.setItem('redirect', location.pathname + location.search + location.hash);
+      location.replace('/baseball-app/');
+    </script>
+  </head>
+</html>
