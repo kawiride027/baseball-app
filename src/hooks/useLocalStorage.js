@@ -6,14 +6,17 @@ import { STORAGE_KEY, DEFAULT_DATA, ROLE_KEY, ROLES } from '../constants';
 const MAX_UNDO_STACK = 30;
 const TEAM_CODE_KEY = 'baseball_team_code';
 
-// Generate a random team code like "HAWKS-7X3K"
+// Generate a memorable team code like "HAWKS42"
+const CODE_WORDS = [
+  'HAWKS','TIGERS','BEARS','EAGLES','LIONS','WOLVES','SHARKS','COBRAS',
+  'STORM','THUNDER','BLAZE','ROCKETS','VIPERS','FALCONS','PANTHERS',
+  'BULLS','RAMS','KNIGHTS','BLAZERS','COMETS','MAVS','GIANTS','ACES',
+  'BOLTS','FURY','CRUSH','SPARK','RUSH','STRIKE','SURGE',
+];
 export function generateTeamCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code.slice(0, 4) + '-' + code.slice(4);
+  const word = CODE_WORDS[Math.floor(Math.random() * CODE_WORDS.length)];
+  const num = Math.floor(Math.random() * 90 + 10); // 10-99
+  return word + num;
 }
 
 // Get/set team code from localStorage

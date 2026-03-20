@@ -49,7 +49,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
   }
 
   const handleJoin = async () => {
-    const code = joinCode.trim().toUpperCase()
+    const code = joinCode.trim().toUpperCase().replace(/[\s\-]/g, '')
     if (!code) {
       setError('Enter a team code')
       return
@@ -76,7 +76,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
   }
 
   const handleJoinParent = async () => {
-    const code = joinCode.trim().toUpperCase()
+    const code = joinCode.trim().toUpperCase().replace(/[\s\-]/g, '')
     if (!code) {
       setError('Enter a parent spectator code')
       return
@@ -331,7 +331,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
 
         <input
           type="text"
-          placeholder="XXXX-XXXX"
+          placeholder="e.g. HAWKS42"
           value={joinCode}
           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
           style={{
@@ -346,9 +346,9 @@ export default function TeamCodeScreen({ onTeamReady }) {
             color: '#FF9800',
             marginBottom: 16,
             textAlign: 'center',
-            letterSpacing: 3,
+            letterSpacing: 2,
           }}
-          maxLength={9}
+          maxLength={12}
           autoFocus
         />
 
@@ -417,7 +417,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
 
       <input
         type="text"
-        placeholder="XXXX-XXXX"
+        placeholder="e.g. TIGERS55"
         value={joinCode}
         onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
         style={{
@@ -432,9 +432,9 @@ export default function TeamCodeScreen({ onTeamReady }) {
           color: '#FFD700',
           marginBottom: 16,
           textAlign: 'center',
-          letterSpacing: 3,
+          letterSpacing: 2,
         }}
-        maxLength={9}
+        maxLength={12}
         autoFocus
       />
 
