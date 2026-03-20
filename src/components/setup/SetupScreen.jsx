@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { STORAGE_KEY } from '../../constants'
 import PinModal from '../field/PinModal'
+import ScheduleImportScreen from './ScheduleImportScreen'
+import RosterImportScreen from './RosterImportScreen'
 
 export default function SetupScreen({ data, updateData }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [deletePlayerId, setDeletePlayerId] = useState(null)
   const [showDeletePin, setShowDeletePin] = useState(false)
+  const [showScheduleImport, setShowScheduleImport] = useState(false)
+  const [showRosterImport, setShowRosterImport] = useState(false)
 
   const setTeamName = (name) => {
     updateData((prev) => ({ ...prev, teamName: name }))
@@ -57,65 +61,31 @@ export default function SetupScreen({ data, updateData }) {
     }))
   }
 
-  const parseCSV = (text) => {
-    const lines = text.trim().split('\n').map((l) => l.trim()).filter(Boolean)
-    if (lines.length === 0) return null
-    // Check if first line is a header
-    const first = lines[0].toLowerCase()
-    const startIdx = (first.includes('date') || first.includes('opponent')) ? 1 : 0
-    const games = []
-    for (let i = startIdx; i < lines.length; i++) {
-      // Split on comma, but respect quotes
-      const parts = lines[i].match(/(".*?"|[^,]+)/g)?.map((s) => s.replace(/^"|"$/g, '').trim()) || []
-      if (parts.length >= 2) {
-        games.push({ date: parts[0], opponent: parts[1] })
-      }
-    }
-    return games.length > 0 ? games : null
+  const handleScheduleImportComplete = (games, mode) => {
+    const newGames = games.map((g, i) => ({
+      id: 'g' + (Date.now() + i) + Math.random().toString(36).slice(2, 6),
+      date: g.date || '',
+      opponent: g.opponent || '',
+    }))
+    updateData((prev) => ({
+      ...prev,
+      schedule: mode === 'append' ? [...prev.schedule, ...newGames] : newGames,
+    }))
+    setShowScheduleImport(false)
   }
 
-  const importSchedule = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const text = ev.target.result
-        let imported
-        // Try JSON first, then CSV
-        try {
-          imported = JSON.parse(text)
-          if (!Array.isArray(imported)) {
-            alert('Invalid JSON: expected an array of games')
-            return
-          }
-        } catch {
-          imported = parseCSV(text)
-          if (!imported) {
-            alert('Could not parse file. Use CSV (date,opponent per line) or JSON.')
-            return
-          }
-        }
-        if (data.schedule.length > 0) {
-          if (!confirm(`Replace ${data.schedule.length} existing games with ${imported.length} imported games?`)) {
-            return
-          }
-        }
-        const newGames = imported.map((g, i) => ({
-          id: 'g' + (Date.now() + i) + Math.random().toString(36).slice(2, 6),
-          date: g.date || '',
-          opponent: g.opponent || '',
-        }))
-        updateData((prev) => ({
-          ...prev,
-          schedule: newGames,
-        }))
-      } catch (err) {
-        alert('Could not parse file')
-      }
-    }
-    reader.readAsText(file)
-    e.target.value = ''
+  const handleRosterImportComplete = (players, mode) => {
+    const newPlayers = players.map((p, i) => ({
+      id: 'p' + (Date.now() + i) + Math.random().toString(36).slice(2, 6),
+      jerseyNumber: p.jerseyNumber,
+      name: p.name,
+      nickname: p.nickname || '',
+    }))
+    updateData((prev) => ({
+      ...prev,
+      roster: mode === 'append' ? [...prev.roster, ...newPlayers] : newPlayers,
+    }))
+    setShowRosterImport(false)
   }
 
   const updateGame = (id, field, value) => {
@@ -176,6 +146,26 @@ export default function SetupScreen({ data, updateData }) {
     ? data.roster.find((p) => p.id === deletePlayerId)
     : null
 
+  if (showScheduleImport) {
+    return (
+      <ScheduleImportScreen
+        existingCount={data.schedule.length}
+        onComplete={handleScheduleImportComplete}
+        onBack={() => setShowScheduleImport(false)}
+      />
+    )
+  }
+
+  if (showRosterImport) {
+    return (
+      <RosterImportScreen
+        existingCount={data.roster.length}
+        onComplete={handleRosterImportComplete}
+        onBack={() => setShowRosterImport(false)}
+      />
+    )
+  }
+
   return (
     <div>
       <div className="screen-title">Team Setup</div>
@@ -224,17 +214,21 @@ export default function SetupScreen({ data, updateData }) {
           </div>
         </div>
       ))}
-      <button className="btn btn--accent btn--full" onClick={addPlayer} style={{ marginTop: 8 }}>
-        + Add Player
-      </button>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button className="btn btn--accent btn--full" onClick={addPlayer} style={{ flex: 1 }}>
+          + Add Player
+        </button>
+        <button className="btn btn--full" style={{ flex: 1 }} onClick={() => setShowRosterImport(true)}>
+          Import Roster
+        </button>
+      </div>
 
       {/* Schedule */}
       <div className="section-title">Game Schedule ({data.schedule.length} games)</div>
       {data.schedule.length === 0 && (
-        <label className="btn btn--accent btn--full" style={{ cursor: 'pointer', textAlign: 'center', marginBottom: 12, fontSize: 16 }}>
+        <button className="btn btn--accent btn--full" style={{ marginBottom: 12, fontSize: 16 }} onClick={() => setShowScheduleImport(true)}>
           Import Season Game Schedule
-          <input type="file" accept=".json,.csv,.txt" onChange={importSchedule} style={{ display: 'none' }} />
-        </label>
+        </button>
       )}
       {data.schedule.map((game) => {
         const gameData = data.games?.[game.id]
@@ -281,10 +275,9 @@ export default function SetupScreen({ data, updateData }) {
         <button className="btn btn--accent btn--full" onClick={addGame} style={{ flex: 1 }}>
           + Add Game
         </button>
-        <label className="btn btn--full" style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}>
-          Import Season Game Schedule
-          <input type="file" accept=".json,.csv,.txt" onChange={importSchedule} style={{ display: 'none' }} />
-        </label>
+        <button className="btn btn--full" style={{ flex: 1 }} onClick={() => setShowScheduleImport(true)}>
+          Import Schedule
+        </button>
       </div>
 
       {/* Data management */}
