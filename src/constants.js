@@ -1,12 +1,11 @@
-export const POSITIONS = ['P', 'C', '1B', '2B', 'SS', '3B', 'LF', 'LCF', 'CF', 'RCF', 'RF'];
+export const POSITIONS = ['P', 'C', '1B', '2B', 'SS', '3B', 'LF', 'LCF', 'RCF', 'RF'];
 export const INNINGS = 6;
 export const PIN_CODE = '999';
 
 export const POSITION_COORDS = {
   LF:  { x: 74,  y: 63 },
-  LCF: { x: 192, y: 38 },
-  CF:  { x: 310, y: 34 },
-  RCF: { x: 428, y: 38 },
+  LCF: { x: 230, y: 34 },
+  RCF: { x: 390, y: 34 },
   RF:  { x: 546, y: 63 },
   SS:  { x: 195, y: 155 },
   '2B': { x: 425, y: 155 },
@@ -25,7 +24,6 @@ export const POSITION_LABELS = {
   '3B': '3rd Base',
   LF: 'Left Field',
   LCF: 'Left Center',
-  CF: 'Center Field',
   RCF: 'Right Center',
   RF: 'Right Field',
 };

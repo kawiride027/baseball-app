@@ -18,7 +18,6 @@ import { POSITIONS, INNINGS, ordinalInning } from '../../constants'
 import DiamondSVG from './DiamondSVG'
 import BenchArea from './BenchArea'
 import PinModal from './PinModal'
-import AtBatView from './AtBatView'
 import GameOverModal from '../batting/GameOverModal'
 
 function SortableBatterRow({ player, idx }) {
@@ -70,12 +69,11 @@ export default function FieldViewScreen({
   unmarkPlayerAbsent,
   resetGame,
   isParent,
+  onSwitchToBatting,
 }) {
   // Unlock/lock mode: false = locked (kids view), true = coach is editing
   const [unlocked, setUnlocked] = useState(false)
   const [showUnlockPin, setShowUnlockPin] = useState(false)
-  const [showAtBat, setShowAtBat] = useState(false)
-  const [showAtBatPin, setShowAtBatPin] = useState(false)
   const [showEditBatOrderPin, setShowEditBatOrderPin] = useState(false)
   const [editingBatOrder, setEditingBatOrder] = useState(false)
   const [tempBatOrder, setTempBatOrder] = useState([])
@@ -160,21 +158,6 @@ export default function FieldViewScreen({
 
   const handleLock = () => {
     setUnlocked(false)
-  }
-
-  // At bat flow
-  const handleStartAtBat = () => {
-    setShowAtBatPin(true)
-  }
-
-  const handleAtBatPinConfirm = () => {
-    setShowAtBatPin(false)
-    updateAtBat({ isAtBat: true })
-    setShowAtBat(true)
-  }
-
-  const handleExitAtBat = () => {
-    setShowAtBat(false)
   }
 
   // Edit batting order flow
@@ -276,24 +259,6 @@ export default function FieldViewScreen({
   const nextBatter = battingOrder && atBat.nextBatterIndex != null
     ? roster.find((p) => p.id === battingOrder[atBat.nextBatterIndex])
     : null
-
-  // If showing at bat view, render that instead of the diamond
-  if (showAtBat) {
-    return (
-      <AtBatView
-        roster={roster}
-        battingOrder={battingOrder}
-        atBat={atBat}
-        updateAtBat={updateAtBat}
-        isHome={isHome}
-        teamName={teamName}
-        opponent={opponent}
-        onExitAtBat={handleExitAtBat}
-        setViewingInning={setViewingInning}
-        onGameComplete={onGameComplete}
-      />
-    )
-  }
 
   // Editing batting order overlay
   if (editingBatOrder) {
@@ -408,14 +373,6 @@ export default function FieldViewScreen({
           )}
 
           <button
-            className="btn btn--small btn--success"
-            onClick={handleStartAtBat}
-            style={{ fontSize: 13 }}
-          >
-            ⚾ Start At Bat
-          </button>
-
-          <button
             className="btn btn--small"
             onClick={handleEditBatOrderRequest}
             style={{ fontSize: 13, borderColor: '#00E5FF', color: '#00E5FF' }}
@@ -431,6 +388,28 @@ export default function FieldViewScreen({
             ❌ Mark Absent
           </button>
         </div>
+      )}
+
+      {/* At-bat banner — nudge coach to Batting tab */}
+      {atBat.isAtBat && !isParent && (
+        <button
+          onClick={onSwitchToBatting}
+          style={{
+            width: '100%',
+            padding: '14px 16px',
+            marginBottom: 8,
+            background: 'rgba(0,200,83,0.12)',
+            border: '3px solid #00C853',
+            borderRadius: 10,
+            fontSize: 17,
+            fontWeight: 900,
+            color: '#00C853',
+            cursor: 'pointer',
+            textAlign: 'center',
+          }}
+        >
+          ⚾ We're At Bat — Tap to Track Batting Order →
+        </button>
       )}
 
       {/* Next 3 batters bar */}
@@ -622,15 +601,6 @@ export default function FieldViewScreen({
           message="Enter coach PIN to edit positions"
           onConfirm={handleUnlockConfirm}
           onCancel={() => setShowUnlockPin(false)}
-        />
-      )}
-
-      {/* At bat PIN modal */}
-      {showAtBatPin && (
-        <PinModal
-          message="Enter coach PIN to start at-bat"
-          onConfirm={handleAtBatPinConfirm}
-          onCancel={() => setShowAtBatPin(false)}
         />
       )}
 

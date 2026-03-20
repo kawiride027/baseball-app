@@ -31,15 +31,13 @@ function SortableRow({ player, idx }) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.8 : 1,
-    touchAction: 'none',
-    cursor: 'grab',
     zIndex: isDragging ? 10 : 0,
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <div style={rowStyles.orderNum}>{idx + 1}</div>
-      <div style={rowStyles.grip}>⠿</div>
+      <div {...listeners} style={rowStyles.grip}>⠿</div>
       <span style={rowStyles.jersey}>#{player.jerseyNumber}</span>
       <span style={rowStyles.name}>{player.nickname || player.name}</span>
     </div>
@@ -62,9 +60,12 @@ const rowStyles = {
   },
   grip: {
     color: '#555',
-    fontSize: 18,
+    fontSize: 22,
     flexShrink: 0,
     lineHeight: 1,
+    cursor: 'grab',
+    touchAction: 'none',
+    padding: '4px 2px',
   },
   jersey: {
     color: '#FFD700',

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, disableNetwork, enableNetwork } from 'firebase/firestore';
 import { db } from '../firebase';
 import { STORAGE_KEY, DEFAULT_DATA, ROLE_KEY, ROLES } from '../constants';
 
@@ -101,7 +101,7 @@ export function useAppData(role) {
     if (!teamCode) return;
 
     const docRef = doc(db, 'teams', teamCode);
-    const unsubscribe = onSnapshot(docRef, (snapshot) => {
+    const unsubscribe = onSnapshot(docRef, { includeMetadataChanges: true }, (snapshot) => {
       if (snapshot.exists()) {
         const remoteData = snapshot.data();
         // Only update if the remote data is different (avoid loops)
@@ -117,7 +117,19 @@ export function useAppData(role) {
       console.warn('Firestore sync error (working offline):', error.message);
     });
 
-    return () => unsubscribe();
+    // Force Firestore to reconnect when the tab/app becomes visible again
+    // (mobile browsers kill WebSocket connections when backgrounded)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        disableNetwork(db).then(() => enableNetwork(db)).catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [teamCode]);
 
   // --- Save to localStorage + Firestore on every change ---

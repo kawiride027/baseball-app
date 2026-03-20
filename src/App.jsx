@@ -452,6 +452,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
             unmarkPlayerAbsent={unmarkPlayerAbsent}
             resetGame={resetGame}
             isParent={isParent}
+            onSwitchToBatting={() => setCurrentTab('batting')}
           />
         )
       case 'lineup':

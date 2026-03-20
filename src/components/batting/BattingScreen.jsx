@@ -24,15 +24,24 @@ function SortablePlayer({ player, index, isNextUp, isLastOut }) {
     fontSize: 17,
     fontWeight: 700,
     color: '#FFF',
-    cursor: 'grab',
     opacity: isDragging ? 0.5 : 1,
     transform: CSS.Transform.toString(transform),
     transition,
-    touchAction: 'none',
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <span
+        {...listeners}
+        style={{
+          color: '#555',
+          fontSize: 24,
+          cursor: 'grab',
+          touchAction: 'none',
+          padding: '4px 2px',
+          flexShrink: 0,
+        }}
+      >⠿</span>
       <span style={{
         width: 32,
         height: 32,
@@ -75,7 +84,6 @@ function SortablePlayer({ player, index, isNextUp, isLastOut }) {
           LAST OUT
         </span>
       )}
-      <span style={{ color: '#555', fontSize: 20 }}>⠿</span>
     </div>
   )
 }
@@ -309,7 +317,7 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
           </DndContext>
 
           <div style={{ marginTop: 16, fontSize: 13, color: '#555', textAlign: 'center' }}>
-            Drag players to reorder batting lineup (PIN required)
+            Drag the ⠿ handle to reorder batting lineup (PIN required)
           </div>
         </>
       )}
