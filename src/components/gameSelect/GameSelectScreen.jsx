@@ -322,7 +322,7 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                   {isCancelled ? 'UN-\nCANCEL' : 'GAME\nCANCEL'}
                 </button>
               )}
-              {isCompleted && (
+              {gameData && !isCancelled && (
                 <button
                   onClick={() => setResetTarget(game.id)}
                   style={{
