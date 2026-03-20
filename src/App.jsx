@@ -571,7 +571,10 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
             updateAtBat={updateAtBat}
             opponent={activeSchedule?.opponent}
             isHome={activeGame.isHome}
-            onSwitchToField={() => setCurrentTab('field')}
+            onSwitchToField={(inning) => {
+              if (inning) setViewingInning(inning)
+              setCurrentTab('field')
+            }}
             teamName={data.teamName}
             onGameComplete={completeGame}
             isParent={isParent}

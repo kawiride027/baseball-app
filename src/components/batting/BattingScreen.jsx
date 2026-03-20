@@ -145,7 +145,7 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
         currentInning: atBat.currentInning + 1,
       })
       setShowLastOut(false)
-      if (onSwitchToField) onSwitchToField()
+      if (onSwitchToField) onSwitchToField(atBat.currentInning + 1)
     }
   }
 
@@ -161,7 +161,7 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
     }
     setShowGameOver(false)
     setPendingLastOut(null)
-    if (onSwitchToField) onSwitchToField()
+    if (onSwitchToField) onSwitchToField(atBat.currentInning + 1)
   }
 
   const handleGameOverDone = ({ scoreUs, scoreThem, result }) => {
