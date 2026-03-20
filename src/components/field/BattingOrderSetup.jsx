@@ -79,7 +79,7 @@ const rowStyles = {
   },
 }
 
-export default function BattingOrderSetup({ roster, battingOrder, onComplete, opponent }) {
+export default function BattingOrderSetup({ roster, battingOrder, onComplete, opponent, onUploadLineup }) {
   const [order, setOrder] = useState([])
   const [absentIds, setAbsentIds] = useState([])
 
@@ -140,6 +140,12 @@ export default function BattingOrderSetup({ roster, battingOrder, onComplete, op
         Tap players in order, then drag to rearrange.
         {opponent ? ` · vs ${opponent}` : ''}
       </div>
+
+      {onUploadLineup && (
+        <button onClick={onUploadLineup} style={styles.uploadLineupBtn}>
+          Upload Lineup CSV
+        </button>
+      )}
 
       {/* Current order so far — draggable */}
       {placed.length > 0 && (
@@ -260,6 +266,19 @@ function ordinal(n) {
 const styles = {
   container: {
     padding: 4,
+  },
+  uploadLineupBtn: {
+    width: '100%',
+    minHeight: 44,
+    fontSize: 14,
+    fontWeight: 700,
+    border: '2px solid #555',
+    borderRadius: 10,
+    background: '#1a1a1a',
+    color: '#888',
+    cursor: 'pointer',
+    padding: '10px 16px',
+    marginBottom: 16,
   },
   title: {
     fontSize: 28,

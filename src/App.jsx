@@ -12,6 +12,7 @@ import BattingScreen from './components/batting/BattingScreen'
 import GameHistoryScreen from './components/history/GameHistoryScreen'
 import PreGameWizard from './components/field/PreGameWizard'
 import BattingOrderSetup from './components/field/BattingOrderSetup'
+import LineupImportScreen from './components/field/LineupImportScreen'
 import PinModal from './components/field/PinModal'
 import './App.css'
 
@@ -57,6 +58,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
   const [showHomeAwayPicker, setShowHomeAwayPicker] = useState(false)
   const [showBattingOrderSetup, setShowBattingOrderSetup] = useState(false)
   const [showPreGameWizard, setShowPreGameWizard] = useState(false)
+  const [showLineupImport, setShowLineupImport] = useState(false)
   const [pendingGameId, setPendingGameId] = useState(null)
   const [pendingBattingOrder, setPendingBattingOrder] = useState(null)
   const [pendingAbsentIds, setPendingAbsentIds] = useState([])
@@ -71,7 +73,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
 
   // Tab navigation (no PIN — kids can browse freely, edits are PIN-protected)
   const handleTabClick = (tabId) => {
-    if (showPreGameWizard || showBattingOrderSetup) return
+    if (showPreGameWizard || showBattingOrderSetup || showLineupImport) return
     if (tabId === currentTab) return
     setCurrentTab(tabId)
   }
@@ -349,6 +351,44 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
   }
 
   const renderScreen = () => {
+    // CSV lineup import (replaces both batting order + position wizard)
+    if (showLineupImport && data.activeGameId) {
+      return (
+        <LineupImportScreen
+          roster={data.roster}
+          opponent={activeSchedule?.opponent}
+          onComplete={(assignments, battingOrder, absentIds) => {
+            const isHome = data.games[data.activeGameId]?.isHome
+            updateData(prev => {
+              const currentGame = prev.games[prev.activeGameId]
+              return {
+                ...prev,
+                games: {
+                  ...prev.games,
+                  [prev.activeGameId]: {
+                    ...currentGame,
+                    assignments,
+                    battingOrder,
+                    setupComplete: true,
+                    absentIds: absentIds || [],
+                  },
+                },
+              }
+            })
+            setShowLineupImport(false)
+            setPendingBattingOrder(null)
+            setPendingAbsentIds([])
+            setPendingGameId(null)
+            setCurrentTab(isHome ? 'field' : 'batting')
+          }}
+          onBack={() => {
+            setShowLineupImport(false)
+            setShowBattingOrderSetup(true)
+          }}
+        />
+      )
+    }
+
     // Batting order setup (Step 3: after home/away, before positions)
     if (showBattingOrderSetup && data.activeGameId) {
       return (
@@ -357,6 +397,10 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
           battingOrder={data.games[data.activeGameId]?.battingOrder || []}
           onComplete={handleBattingOrderComplete}
           opponent={activeSchedule?.opponent}
+          onUploadLineup={() => {
+            setShowBattingOrderSetup(false)
+            setShowLineupImport(true)
+          }}
         />
       )
     }
@@ -661,7 +705,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
             key={tab.id}
             className={`nav-btn ${currentTab === tab.id ? 'nav-btn--active' : ''}`}
             onClick={() => handleTabClick(tab.id)}
-            style={(showPreGameWizard || showBattingOrderSetup) ? { opacity: 0.3, pointerEvents: 'none' } : {}}
+            style={(showPreGameWizard || showBattingOrderSetup || showLineupImport) ? { opacity: 0.3, pointerEvents: 'none' } : {}}
           >
             {isParent && tab.parentLabel ? tab.parentLabel : tab.label}
           </button>
