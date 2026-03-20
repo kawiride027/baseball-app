@@ -83,7 +83,7 @@ App() → checks for team code in localStorage
 - **Away team end-of-game**: After top of 6th batting → `awaitingFinalFielding` flag → field view for bottom of 6th → End Game button
 - **Mid-game Mark Absent**: PIN-protected, removes from battingOrder + field positions + bench, recalculates `nextBatterIndex` by ID lookup, tracked in `absentIds` array
 - **Reset Game**: PIN-protected, erases all game data for the active game, returns to game select
-- **11 field positions**: P, C, 1B, 2B, SS, 3B, LF, LCF, CF, RCF, RF (youth league uses 4 outfielders)
+- **10 field positions**: P, C, 1B, 2B, SS, 3B, LF, LCF, RCF, RF (no CF in this division)
 - **6 innings per game**
 - **Schedule**: Loaded from schedule.json, season runs Mar–May 2026
 
@@ -110,6 +110,7 @@ Firebase config uses environment variables (`.env` locally, GitHub Actions secre
 - Existing teams without parentCode get "Generate Parent Code" button
 
 ## Recent Changes (latest first)
+- Game-day fixes: spectator auto-refresh (visibilitychange + Firestore reconnect), drag-handle-only for batting order scroll on iPad, single at-bat control (Batting tab only, removed from Field tab), removed CF position (10 positions now)
 - Parent Spectator Mode: separate parent code for read-only real-time viewing (field positions, batting order, history)
 - Firebase Cloud Sync: Firestore real-time sync, team codes, TeamCodeScreen, offline persistence
 - PIN-protected "Reset Game" button — erases all game data if coach selected wrong team
