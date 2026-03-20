@@ -66,7 +66,7 @@ function matchPlayer(input, roster, alreadyMatched) {
   return partial || null
 }
 
-export default function LineupImportScreen({ roster, onComplete, onBack, opponent }) {
+export default function LineupImportScreen({ roster, onComplete, onBack, onCancel, opponent }) {
   const fileInputRef = useRef(null)
   const [parsed, setParsed] = useState(null)
   const [error, setError] = useState('')
@@ -344,6 +344,12 @@ export default function LineupImportScreen({ roster, onComplete, onBack, opponen
       <button onClick={onBack} style={styles.backBtn}>
         Back to Manual Setup
       </button>
+
+      {onCancel && (
+        <button onClick={onCancel} style={styles.cancelBtn}>
+          Cancel Setup
+        </button>
+      )}
     </div>
   )
 }
@@ -466,5 +472,18 @@ const styles = {
     color: '#888',
     cursor: 'pointer',
     padding: '8px 16px',
+  },
+  cancelBtn: {
+    width: '100%',
+    minHeight: 44,
+    fontSize: 14,
+    fontWeight: 700,
+    border: 'none',
+    borderRadius: 10,
+    background: 'transparent',
+    color: '#666',
+    cursor: 'pointer',
+    padding: '10px 16px',
+    marginTop: 8,
   },
 }

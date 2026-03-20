@@ -140,7 +140,7 @@ function PlayerStatsPanel({ player, history }) {
   )
 }
 
-export default function PreGameWizard({ roster, onComplete, opponent, games = {}, activeGameId, initialAbsentIds = [] }) {
+export default function PreGameWizard({ roster, onComplete, onCancel, opponent, games = {}, activeGameId, initialAbsentIds = [] }) {
   const [playerIndex, setPlayerIndex] = useState(0)
   const [absentIds, setAbsentIds] = useState(initialAbsentIds)
   const [showStats, setShowStats] = useState(true)
@@ -522,6 +522,27 @@ export default function PreGameWizard({ roster, onComplete, opponent, games = {}
       <div style={{ textAlign: 'center', marginTop: 12, fontSize: 13, color: '#555' }}>
         Pre-game setup {opponent ? `· vs ${opponent}` : ''}
       </div>
+
+      {onCancel && (
+        <button
+          onClick={onCancel}
+          style={{
+            width: '100%',
+            minHeight: 44,
+            fontSize: 14,
+            fontWeight: 700,
+            border: 'none',
+            borderRadius: 10,
+            background: 'transparent',
+            color: '#666',
+            cursor: 'pointer',
+            padding: '10px 16px',
+            marginTop: 8,
+          }}
+        >
+          Cancel Setup
+        </button>
+      )}
     </div>
   )
 }

@@ -350,6 +350,25 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
     setCurrentTab('game')
   }
 
+  // Cancel game setup — removes the in-progress game data and goes back to game list
+  const cancelSetup = () => {
+    const gameId = data.activeGameId
+    if (gameId) {
+      updateData((prev) => {
+        const newGames = { ...prev.games }
+        delete newGames[gameId]
+        return { ...prev, activeGameId: null, viewingInning: 1, games: newGames }
+      })
+    }
+    setShowBattingOrderSetup(false)
+    setShowPreGameWizard(false)
+    setShowLineupImport(false)
+    setPendingBattingOrder(null)
+    setPendingAbsentIds([])
+    setPendingGameId(null)
+    setCurrentTab('game')
+  }
+
   const renderScreen = () => {
     // CSV lineup import (replaces both batting order + position wizard)
     if (showLineupImport && data.activeGameId) {
@@ -357,6 +376,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
         <LineupImportScreen
           roster={data.roster}
           opponent={activeSchedule?.opponent}
+          onCancel={cancelSetup}
           onComplete={(assignments, battingOrder, absentIds) => {
             const isHome = data.games[data.activeGameId]?.isHome
             updateData(prev => {
@@ -397,6 +417,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
           battingOrder={data.games[data.activeGameId]?.battingOrder || []}
           onComplete={handleBattingOrderComplete}
           opponent={activeSchedule?.opponent}
+          onCancel={cancelSetup}
           onUploadLineup={() => {
             setShowBattingOrderSetup(false)
             setShowLineupImport(true)
@@ -411,6 +432,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
         <PreGameWizard
           roster={data.roster}
           onComplete={handleWizardComplete}
+          onCancel={cancelSetup}
           opponent={activeSchedule?.opponent}
           games={data.games}
           activeGameId={data.activeGameId}

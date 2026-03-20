@@ -79,7 +79,7 @@ const rowStyles = {
   },
 }
 
-export default function BattingOrderSetup({ roster, battingOrder, onComplete, opponent, onUploadLineup }) {
+export default function BattingOrderSetup({ roster, battingOrder, onComplete, opponent, onUploadLineup, onCancel }) {
   const [order, setOrder] = useState([])
   const [absentIds, setAbsentIds] = useState([])
 
@@ -253,6 +253,12 @@ export default function BattingOrderSetup({ roster, battingOrder, onComplete, op
           </div>
         </div>
       )}
+
+      {onCancel && (
+        <button onClick={onCancel} style={styles.cancelBtn}>
+          Cancel Setup
+        </button>
+      )}
     </div>
   )
 }
@@ -266,6 +272,19 @@ function ordinal(n) {
 const styles = {
   container: {
     padding: 4,
+  },
+  cancelBtn: {
+    width: '100%',
+    minHeight: 44,
+    fontSize: 14,
+    fontWeight: 700,
+    border: 'none',
+    borderRadius: 10,
+    background: 'transparent',
+    color: '#666',
+    cursor: 'pointer',
+    padding: '10px 16px',
+    marginTop: 16,
   },
   uploadLineupBtn: {
     width: '100%',
