@@ -295,7 +295,7 @@ export default function GameSelectScreen({ schedule, activeGameId, games, onSele
                     fontWeight: 900,
                     flexShrink: 0,
                   }}>
-                    {isCompleted ? 'DONE' : isActive ? 'ACTIVE' : isSetUp ? 'RESUME ▶' : 'SET UP ▶'}
+                    {isCompleted ? 'VIEW / EDIT' : isActive ? 'ACTIVE' : isSetUp ? 'RESUME ▶' : 'SET UP ▶'}
                   </div>
                 )}
               </button>

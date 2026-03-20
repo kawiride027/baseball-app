@@ -3,8 +3,16 @@ import { POSITIONS, INNINGS, ordinalInning } from '../../constants'
 
 const ALL_OPTIONS = [...POSITIONS, 'BENCH']
 
-export default function LineupScreen({ roster, assignments, updateAssignments, opponent }) {
+export default function LineupScreen({ roster, assignments, updateAssignments, opponent, battingOrder }) {
   const [editing, setEditing] = useState(null) // { playerId, inning }
+
+  // Order players by batting order, with any unordered players at the end
+  const orderedRoster = battingOrder && battingOrder.length > 0
+    ? [
+        ...battingOrder.map(id => roster.find(p => p.id === id)).filter(Boolean),
+        ...roster.filter(p => !battingOrder.includes(p.id)),
+      ]
+    : roster
 
   const getPlayerPosition = (playerId, inning) => {
     const assignment = assignments[String(inning)]
@@ -92,9 +100,12 @@ export default function LineupScreen({ roster, assignments, updateAssignments, o
             </tr>
           </thead>
           <tbody>
-            {roster.map((player) => (
+            {orderedRoster.map((player, idx) => (
               <tr key={player.id}>
                 <td style={nameStyle}>
+                  {battingOrder && battingOrder.includes(player.id) && (
+                    <span style={{ color: '#888', fontSize: 12, marginRight: 6 }}>{idx + 1}.</span>
+                  )}
                   <span style={{ color: '#FFD700', marginRight: 6 }}>#{player.jerseyNumber}</span>
                   {player.name}
                 </td>

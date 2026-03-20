@@ -474,6 +474,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
             assignments={activeGame.assignments}
             updateAssignments={updateAssignments}
             opponent={activeSchedule?.opponent}
+            battingOrder={activeGame.battingOrder}
           />
         )
       case 'batting':
