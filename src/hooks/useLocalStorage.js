@@ -151,7 +151,7 @@ export function useAppData(role) {
 
     if (teamCode && role !== ROLES.PARENT) {
       const docRef = doc(db, 'teams', teamCode);
-      setDoc(docRef, data, { merge: true }).catch((err) => {
+      setDoc(docRef, data).catch((err) => {
         console.warn('Firestore write failed (offline, will sync later):', err.message);
       });
     }
