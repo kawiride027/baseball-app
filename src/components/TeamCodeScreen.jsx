@@ -49,7 +49,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
   }
 
   const handleJoin = async () => {
-    const code = joinCode.trim().toUpperCase().replace(/[\s\-]/g, '')
+    const code = joinCode.trim().toUpperCase().replace(/\s/g, '')
     if (!code) {
       setError('Enter a team code')
       return
@@ -76,7 +76,7 @@ export default function TeamCodeScreen({ onTeamReady }) {
   }
 
   const handleJoinParent = async () => {
-    const code = joinCode.trim().toUpperCase().replace(/[\s\-]/g, '')
+    const code = joinCode.trim().toUpperCase().replace(/\s/g, '')
     if (!code) {
       setError('Enter a parent spectator code')
       return
