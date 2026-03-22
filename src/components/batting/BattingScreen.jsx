@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { DndContext, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -7,10 +7,15 @@ import LastOutModal from './LastOutModal'
 import GameOverModal from './GameOverModal'
 import { INNINGS, ordinalInning } from '../../constants'
 
-function SortablePlayer({ player, index, isNextUp, isLastOut }) {
+function SortablePlayer({ player, index, isNextUp, isLastOut, scrollRef }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: player.id,
   })
+
+  const combinedRef = (node) => {
+    setNodeRef(node)
+    if (isNextUp && scrollRef) scrollRef.current = node
+  }
 
   const style = {
     display: 'flex',
@@ -30,7 +35,7 @@ function SortablePlayer({ player, index, isNextUp, isLastOut }) {
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={combinedRef} style={style} {...attributes}>
       <span
         {...listeners}
         style={{
@@ -178,19 +183,73 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
     if (onGameComplete) onGameComplete({ scoreUs, scoreThem, result })
   }
 
+  const nextBatterRef = useRef(null)
+  const parentNextRef = useRef(null)
+
   const orderedPlayers = battingOrder
     .map((id) => roster.find((p) => p.id === id))
     .filter(Boolean)
 
+  const nextBatter = orderedPlayers[atBat.nextBatterIndex] || null
+
   const lastOutPlayer = atBat.lastOutPlayerId
     ? roster.find((p) => p.id === atBat.lastOutPlayerId)
     : null
+
+  // Auto-scroll to the current batter
+  useEffect(() => {
+    const ref = isParent ? parentNextRef : nextBatterRef
+    if (ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [atBat.nextBatterIndex, atBat.currentInning, isParent])
 
   return (
     <div>
       <div className="screen-title">
         Batting Order {opponent ? `vs ${opponent}` : ''}
       </div>
+
+      {/* Big "Who's Up" banner */}
+      {nextBatter && (
+        <div style={{
+          textAlign: 'center',
+          padding: '16px 12px',
+          marginBottom: 12,
+          background: atBat.isAtBat
+            ? 'linear-gradient(135deg, rgba(0,200,83,0.2), rgba(255,215,0,0.15))'
+            : 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,152,0,0.08))',
+          borderRadius: 12,
+          border: atBat.isAtBat ? '2px solid #00C853' : '2px solid #FFD700',
+        }}>
+          <div style={{
+            fontSize: 12,
+            fontWeight: 900,
+            color: atBat.isAtBat ? '#00C853' : '#FFD700',
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            marginBottom: 4,
+          }}>
+            {atBat.isAtBat ? 'Now At Bat' : 'Leading Off'}
+          </div>
+          <div style={{
+            fontSize: 32,
+            fontWeight: 900,
+            color: '#FFF',
+            lineHeight: 1.1,
+          }}>
+            {nextBatter.nickname || nextBatter.name}
+          </div>
+          <div style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#FFD700',
+            marginTop: 2,
+          }}>
+            #{nextBatter.jerseyNumber}
+          </div>
+        </div>
+      )}
 
       {/* At-bat controls */}
       {isParent ? (
@@ -257,7 +316,7 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
       {isParent ? (
         <div>
           {orderedPlayers.map((player, index) => (
-            <div key={player.id} style={{
+            <div key={player.id} ref={index === atBat.nextBatterIndex ? parentNextRef : undefined} style={{
               display: 'flex',
               alignItems: 'center',
               gap: 12,
@@ -311,6 +370,7 @@ export default function BattingScreen({ roster, battingOrder, updateBattingOrder
                   index={index}
                   isNextUp={index === atBat.nextBatterIndex}
                   isLastOut={player.id === atBat.lastOutPlayerId}
+                  scrollRef={nextBatterRef}
                 />
               ))}
             </SortableContext>
