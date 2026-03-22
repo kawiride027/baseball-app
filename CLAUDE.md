@@ -90,6 +90,10 @@ App() → checks for team code in localStorage
 ## Deployment
 - GitHub Pages via GitHub Actions (deploy workflow on main branch)
 - Base URL: `/baseball-app/`
+- **PWA**: manifest.json + service worker (sw.js) for installable app with offline caching
+  - Icons: icon.svg, icon-192.png, icon-512.png, apple-touch-icon.png in public/
+  - Service worker: cache-first for static assets, network-first for navigation, skips Firestore/Firebase
+  - Cache version: `baseball-v1` (bump CACHE_NAME in sw.js when making breaking changes)
 
 ## Status: Firebase Sync DEPLOYED
 Firebase config uses environment variables (`.env` locally, GitHub Actions secrets for deployment).
@@ -110,6 +114,8 @@ Firebase config uses environment variables (`.env` locally, GitHub Actions secre
 - Existing teams without parentCode get "Generate Parent Code" button
 
 ## Recent Changes (latest first)
+- PWA support: installable app with offline caching, baseball icon, fullscreen on mobile
+- Fix old team codes (with hyphens) not working after code format simplification
 - Game-day fixes: spectator auto-refresh (visibilitychange + Firestore reconnect), drag-handle-only for batting order scroll on iPad, single at-bat control (Batting tab only, removed from Field tab), removed CF position (10 positions now)
 - Parent Spectator Mode: separate parent code for read-only real-time viewing (field positions, batting order, history)
 - Firebase Cloud Sync: Firestore real-time sync, team codes, TeamCodeScreen, offline persistence
