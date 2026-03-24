@@ -518,6 +518,7 @@ function MainApp({ teamCode, role, onLeaveTeam }) {
             unmarkPlayerAbsent={unmarkPlayerAbsent}
             resetGame={resetGame}
             isParent={isParent}
+            isCompleted={!!activeGame.completed}
             onSwitchToBatting={() => setCurrentTab('batting')}
           />
         )

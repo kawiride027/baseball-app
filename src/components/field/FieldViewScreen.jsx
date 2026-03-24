@@ -69,6 +69,7 @@ export default function FieldViewScreen({
   unmarkPlayerAbsent,
   resetGame,
   isParent,
+  isCompleted,
   onSwitchToBatting,
 }) {
   // Unlock/lock mode: false = locked (kids view), true = coach is editing
@@ -88,12 +89,13 @@ export default function FieldViewScreen({
   const [showUnmarkAbsentPin, setShowUnmarkAbsentPin] = useState(false)
   const [pendingUnmarkId, setPendingUnmarkId] = useState(null)
 
-  // Parents use local inning state (no PIN, no Firestore write)
+  // Parents and completed games use local inning state (no PIN, no Firestore write)
+  const readOnly = isParent || isCompleted
   const [localViewingInning, setLocalViewingInning] = useState(viewingInning)
   useEffect(() => {
-    if (isParent) setLocalViewingInning(viewingInning)
-  }, [viewingInning, isParent])
-  const effectiveInning = isParent ? localViewingInning : viewingInning
+    if (readOnly) setLocalViewingInning(viewingInning)
+  }, [viewingInning, readOnly])
+  const effectiveInning = readOnly ? localViewingInning : viewingInning
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -302,7 +304,7 @@ export default function FieldViewScreen({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
         <button
           className="btn btn--small"
-          onClick={() => isParent
+          onClick={() => readOnly
             ? setLocalViewingInning(Math.max(1, effectiveInning - 1))
             : handleInningChange(Math.max(1, effectiveInning - 1))
           }
@@ -323,7 +325,7 @@ export default function FieldViewScreen({
 
         <button
           className="btn btn--small"
-          onClick={() => isParent
+          onClick={() => readOnly
             ? setLocalViewingInning(Math.min(INNINGS, effectiveInning + 1))
             : handleInningChange(Math.min(INNINGS, effectiveInning + 1))
           }
@@ -351,8 +353,25 @@ export default function FieldViewScreen({
         </div>
       )}
 
-      {/* Action bar: unlock/lock + start at bat (coaches only) */}
-      {!isParent && (
+      {/* Completed game banner */}
+      {isCompleted && !isParent && (
+        <div style={{
+          textAlign: 'center',
+          padding: '6px 12px',
+          marginBottom: 8,
+          background: 'rgba(255,215,0,0.1)',
+          border: '1px solid #FFD700',
+          borderRadius: 8,
+          fontSize: 12,
+          fontWeight: 700,
+          color: '#FFD700',
+        }}>
+          COMPLETED GAME — View Only (browse innings freely)
+        </div>
+      )}
+
+      {/* Action bar: unlock/lock + start at bat (coaches only, not completed games) */}
+      {!isParent && !isCompleted && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
           {!unlocked ? (
             <button
