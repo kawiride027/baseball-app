@@ -98,6 +98,7 @@ export function useAppData(role) {
   const [undoStack, setUndoStack] = useState([]);
   const skipUndo = useRef(false);
   const isRemoteUpdate = useRef(false);
+  const initialSyncDone = useRef(false);
 
   // --- Firestore real-time sync ---
   useEffect(() => {
@@ -109,6 +110,7 @@ export function useAppData(role) {
         const remoteData = snapshot.data();
         // Only update if the remote data is different (avoid loops)
         isRemoteUpdate.current = true;
+        initialSyncDone.current = true;
         setDataRaw((prev) => {
           const merged = { ...DEFAULT_DATA, ...remoteData };
           // Check if data actually changed to avoid unnecessary re-renders
@@ -148,6 +150,10 @@ export function useAppData(role) {
       isRemoteUpdate.current = false;
       return;
     }
+
+    // Don't write to Firestore until we've received the first snapshot
+    // (prevents stale localStorage from overwriting fresh server data on second devices)
+    if (!initialSyncDone.current) return;
 
     if (teamCode && role !== ROLES.PARENT) {
       const docRef = doc(db, 'teams', teamCode);

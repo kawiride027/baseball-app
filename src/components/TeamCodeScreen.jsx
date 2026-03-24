@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, getDocFromServer } from 'firebase/firestore'
 import { db } from '../firebase'
 import { generateTeamCode, setStoredTeamCode, setStoredRole } from '../hooks/useLocalStorage'
 import { DEFAULT_DATA, ROLES } from '../constants'
@@ -57,7 +57,8 @@ export default function TeamCodeScreen({ onTeamReady }) {
     setLoading(true)
     setError('')
     try {
-      const snapshot = await getDoc(doc(db, 'teams', code))
+      // Use getDocFromServer to bypass IndexedDB cache and get fresh data
+      const snapshot = await getDocFromServer(doc(db, 'teams', code))
       if (!snapshot.exists()) {
         setError('Team not found. Check the code and try again.')
         setLoading(false)
@@ -92,8 +93,8 @@ export default function TeamCodeScreen({ onTeamReady }) {
         return
       }
       const { teamCode } = parentDoc.data()
-      // Verify team still exists
-      const teamSnapshot = await getDoc(doc(db, 'teams', teamCode))
+      // Verify team still exists (fetch fresh from server)
+      const teamSnapshot = await getDocFromServer(doc(db, 'teams', teamCode))
       if (!teamSnapshot.exists()) {
         setError('Team no longer exists.')
         setLoading(false)
